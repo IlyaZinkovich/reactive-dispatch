@@ -11,6 +11,10 @@ public class BookingId {
     this.uid = uid;
   }
 
+  public static BookingId next() {
+    return new BookingId(UUID.randomUUID().toString());
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -26,9 +30,5 @@ public class BookingId {
   @Override
   public int hashCode() {
     return Objects.hash(uid);
-  }
-
-  public static BookingId next() {
-    return new BookingId(UUID.randomUUID().toString());
   }
 }

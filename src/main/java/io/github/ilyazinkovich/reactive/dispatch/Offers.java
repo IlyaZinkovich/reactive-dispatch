@@ -1,7 +1,6 @@
 package io.github.ilyazinkovich.reactive.dispatch;
 
 import io.reactivex.Flowable;
-import io.reactivex.flowables.ConnectableFlowable;
 
 public class Offers {
 
@@ -9,7 +8,7 @@ public class Offers {
   final Flowable<ReDispatch> reDispatches;
 
   public Offers(final Flowable<SortedCaptains> sortedCaptains) {
-    final ConnectableFlowable<SortedCaptains> stream = sortedCaptains.publish();
+    final Flowable<SortedCaptains> stream = sortedCaptains.share();
     this.offers = stream.filter(captains -> !captains.sortedCaptains.isEmpty())
         .map(this::offer);
     this.reDispatches = stream.filter(captains -> captains.sortedCaptains.isEmpty())

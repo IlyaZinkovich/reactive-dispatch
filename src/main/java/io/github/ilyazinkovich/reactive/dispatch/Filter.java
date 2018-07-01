@@ -8,8 +8,8 @@ import java.util.Set;
 
 public class Filter {
 
-  private final Random random = new Random();
   final Flowable<FilteredCaptains> filteredCaptains;
+  private final Random random = new Random();
 
   public Filter(final Flowable<SuppliedCaptains> suppliedCaptains) {
     this.filteredCaptains = suppliedCaptains.map(this::filterCaptains);

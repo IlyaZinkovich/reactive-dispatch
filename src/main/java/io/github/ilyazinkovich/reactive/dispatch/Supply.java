@@ -8,8 +8,8 @@ import java.util.Set;
 
 public class Supply {
 
-  private final Map<Location, Set<Captain>> captainsByLocation;
   final Flowable<SuppliedCaptains> suppliedCaptains;
+  private final Map<Location, Set<Captain>> captainsByLocation;
 
   public Supply(final Flowable<Booking> bookings,
       final Map<Location, Set<Captain>> captainsByLocation) {
