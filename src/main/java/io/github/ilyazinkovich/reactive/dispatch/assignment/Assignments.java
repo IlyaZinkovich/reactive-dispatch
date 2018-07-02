@@ -1,28 +1,33 @@
 package io.github.ilyazinkovich.reactive.dispatch.assignment;
 
-import static io.reactivex.BackpressureStrategy.BUFFER;
-
 import io.github.ilyazinkovich.reactive.dispatch.captain.CaptainResponse;
 import io.github.ilyazinkovich.reactive.dispatch.offer.ReDispatch;
-import io.reactivex.Flowable;
+import io.reactivex.functions.Consumer;
 import io.reactivex.subjects.PublishSubject;
 
-public class Assignments {
+public class Assignments implements Consumer<CaptainResponse> {
 
-  public final Flowable<Assignment> assignmentsStream;
+  private final PublishSubject<Assignment> assignmentsSubject;
+  private final PublishSubject<ReDispatch> reDispatchesSubject;
 
-  public Assignments(final Flowable<CaptainResponse> captainResponseStream,
+  public Assignments(final PublishSubject<Assignment> assignmentsSubject,
       final PublishSubject<ReDispatch> reDispatchesSubject) {
-    final PublishSubject<Assignment> assignmentsSubject = PublishSubject.create();
-    captainResponseStream.subscribe(captainResponse -> {
-      if (captainResponse.accepted) {
-        final Assignment assignment =
-            new Assignment(captainResponse.booking, captainResponse.captainId);
-        assignmentsSubject.onNext(assignment);
-      } else {
-        reDispatchesSubject.onNext(new ReDispatch(captainResponse.booking));
-      }
-    });
-    this.assignmentsStream = assignmentsSubject.toFlowable(BUFFER);
+    this.assignmentsSubject = assignmentsSubject;
+    this.reDispatchesSubject = reDispatchesSubject;
+  }
+
+  @Override
+  public void accept(final CaptainResponse captainResponse) {
+    if (captainResponse.accepted) {
+      final Assignment assignment =
+          new Assignment(captainResponse.booking, captainResponse.captainId);
+      assignmentsSubject.onNext(assignment);
+    } else {
+      reDispatchesSubject.onNext(new ReDispatch(captainResponse.booking));
+    }
+  }
+
+  public void subscribe(final Consumer<Assignment> consumer) {
+    assignmentsSubject.subscribe(consumer);
   }
 }

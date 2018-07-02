@@ -1,33 +1,37 @@
 package io.github.ilyazinkovich.reactive.dispatch.offer;
 
-import static io.reactivex.BackpressureStrategy.BUFFER;
-
 import io.github.ilyazinkovich.reactive.dispatch.sort.SortedCaptains;
-import io.reactivex.Flowable;
+import io.reactivex.functions.Consumer;
 import io.reactivex.subjects.PublishSubject;
 
-public class Offers {
+public class Offers implements Consumer<SortedCaptains> {
 
-  public final Flowable<Offer> offersStream;
+  private final PublishSubject<Offer> offersSubject;
+  private final PublishSubject<ReDispatch> reDispatchesSubject;
 
-  public Offers(final Flowable<SortedCaptains> sortedCaptainsStream,
+  public Offers(final PublishSubject<Offer> offersSubject,
       final PublishSubject<ReDispatch> reDispatchesSubject) {
-    final PublishSubject<Offer> offersSubject = PublishSubject.create();
-    sortedCaptainsStream.doOnNext(sortedCaptains -> {
-      if (sortedCaptains.captains.isEmpty()) {
-        offersSubject.onNext(offer(sortedCaptains));
-      } else {
-        reDispatchesSubject.onNext(reDispatch(sortedCaptains));
-      }
-    });
-    this.offersStream = offersSubject.toFlowable(BUFFER);
+    this.offersSubject = offersSubject;
+    this.reDispatchesSubject = reDispatchesSubject;
   }
 
-  private Offer offer(final SortedCaptains captains) {
-    return new Offer(captains.booking, captains.captains.get(0).id);
+  public void subscribeOffers(final Consumer<Offer> offerConsumer) {
+    offersSubject.subscribe(offerConsumer);
   }
 
-  private ReDispatch reDispatch(final SortedCaptains captains) {
-    return new ReDispatch(captains.booking);
+  public void subscribeReDispatches(final Consumer<ReDispatch> reDispatchConsumer) {
+    reDispatchesSubject.subscribe(reDispatchConsumer);
+  }
+
+  @Override
+  public void accept(final SortedCaptains sortedCaptains) {
+    if (sortedCaptains.captains.isEmpty()) {
+      final ReDispatch reDispatch = new ReDispatch(sortedCaptains.booking);
+      reDispatchesSubject.onNext(reDispatch);
+    } else {
+      final Offer offer = new Offer(sortedCaptains.booking,
+          sortedCaptains.captains.get(0).id);
+      offersSubject.onNext(offer);
+    }
   }
 }
