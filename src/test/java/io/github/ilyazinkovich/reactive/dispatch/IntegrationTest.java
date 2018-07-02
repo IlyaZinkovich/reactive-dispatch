@@ -17,8 +17,8 @@ import io.github.ilyazinkovich.reactive.dispatch.filter.Filter;
 import io.github.ilyazinkovich.reactive.dispatch.filter.FilteredCaptains;
 import io.github.ilyazinkovich.reactive.dispatch.offer.Offer;
 import io.github.ilyazinkovich.reactive.dispatch.offer.Offers;
-import io.github.ilyazinkovich.reactive.dispatch.redispatch.ReDispatch;
 import io.github.ilyazinkovich.reactive.dispatch.redispatch.DispatchRetryExceeded;
+import io.github.ilyazinkovich.reactive.dispatch.redispatch.ReDispatch;
 import io.github.ilyazinkovich.reactive.dispatch.redispatch.ReDispatcher;
 import io.github.ilyazinkovich.reactive.dispatch.sort.Sort;
 import io.github.ilyazinkovich.reactive.dispatch.sort.SortedCaptains;
@@ -42,9 +42,11 @@ class IntegrationTest {
 
   private static final Random random = new Random();
   private static final Supplier<Boolean> ALWAYS_ACCEPT_OFFERS = () -> true;
+  private static final Supplier<Boolean> ALWAYS_DECLINE_OFFERS = () -> false;
   private static final Supplier<Integer> AT_LEAST_ONE = () -> random.nextInt(8) + 1;
   private static final Supplier<Integer> ZERO = () -> 0;
-  private static final Predicate<Captain> NO_CAPTAIN_FILTER = captain -> true;
+  private static final Predicate<Captain> NO_CAPTAINS_FILTER = captain -> true;
+  private static final Predicate<Captain> ALL_CAPTAINS_FILTER = captain -> false;
   private final PublishSubject<Booking> bookingsSubject = PublishSubject.create();
   private final PublishSubject<ReDispatch> reDispatchesSubject = PublishSubject.create();
   private final PublishSubject<SuppliedCaptains> suppliedCaptainsSubject = PublishSubject.create();
@@ -67,7 +69,7 @@ class IntegrationTest {
     final ReDispatcher reDispatcher = new ReDispatcher(bookingsSubject, retriesCount,
         dispatchRetryExceededSubject);
     final Supply supply = new Supply(suppliedCaptainsSubject, captainsByLocation);
-    final Filter filter = new Filter(filteredCaptainsSubject, NO_CAPTAIN_FILTER);
+    final Filter filter = new Filter(filteredCaptainsSubject, NO_CAPTAINS_FILTER);
     final Sort sort = new Sort(sortedCaptainsSubject);
     final Offers offers = new Offers(offersSubject, reDispatchesSubject);
     final CaptainSimulator captainSimulator =
@@ -88,7 +90,7 @@ class IntegrationTest {
 
   @Test
   void testReDispatchForEmptySupply() {
-    final int bookingsCount = 1;
+    final int bookingsCount = 10;
     final List<Booking> bookings = generateBookings(bookingsCount);
     final ConcurrentMap<Location, Set<Captain>> captainsByLocation = bookings.stream()
         .collect(toConcurrentMap(booking -> booking.pickupLocation,
@@ -97,11 +99,71 @@ class IntegrationTest {
     final ReDispatcher reDispatcher = new ReDispatcher(bookingsSubject, retriesCount,
         dispatchRetryExceededSubject);
     final Supply supply = new Supply(suppliedCaptainsSubject, captainsByLocation);
-    final Filter filter = new Filter(filteredCaptainsSubject, NO_CAPTAIN_FILTER);
+    final Filter filter = new Filter(filteredCaptainsSubject, NO_CAPTAINS_FILTER);
     final Sort sort = new Sort(sortedCaptainsSubject);
     final Offers offers = new Offers(offersSubject, reDispatchesSubject);
     final CaptainSimulator captainSimulator =
         new CaptainSimulator(captainResponseSubject, ALWAYS_ACCEPT_OFFERS);
+    final Assignments assignments = new Assignments(assignmentsSubject, reDispatchesSubject);
+    wire(reDispatcher, supply, filter, sort, offers, captainSimulator, assignments);
+    final TestSubscriber<Assignment> assignmentsTestSubscriber = TestSubscriber.create();
+    assignments.subscribeAssignments(assignmentsTestSubscriber::onNext);
+    final TestSubscriber<DispatchRetryExceeded> dispatchRetryExceededTestSubscriber =
+        TestSubscriber.create();
+    reDispatcher.subscribe(dispatchRetryExceededTestSubscriber::onNext);
+
+    bookings.forEach(bookingsSubject::onNext);
+
+    dispatchRetryExceededTestSubscriber.assertValueCount(bookingsCount);
+    assignmentsTestSubscriber.assertValueCount(0);
+  }
+
+  @Test
+  void testReDispatchForEmptyCaptainsAfterFilter() {
+    final int bookingsCount = 10;
+    final List<Booking> bookings = generateBookings(bookingsCount);
+    final ConcurrentMap<Location, Set<Captain>> captainsByLocation = bookings.stream()
+        .collect(toConcurrentMap(booking -> booking.pickupLocation,
+            booking -> randomCaptains(AT_LEAST_ONE)));
+    final Map<BookingId, AtomicInteger> retriesCount = new ConcurrentHashMap<>();
+    final ReDispatcher reDispatcher = new ReDispatcher(bookingsSubject, retriesCount,
+        dispatchRetryExceededSubject);
+    final Supply supply = new Supply(suppliedCaptainsSubject, captainsByLocation);
+    final Filter filter = new Filter(filteredCaptainsSubject, ALL_CAPTAINS_FILTER);
+    final Sort sort = new Sort(sortedCaptainsSubject);
+    final Offers offers = new Offers(offersSubject, reDispatchesSubject);
+    final CaptainSimulator captainSimulator =
+        new CaptainSimulator(captainResponseSubject, ALWAYS_ACCEPT_OFFERS);
+    final Assignments assignments = new Assignments(assignmentsSubject, reDispatchesSubject);
+    wire(reDispatcher, supply, filter, sort, offers, captainSimulator, assignments);
+    final TestSubscriber<Assignment> assignmentsTestSubscriber = TestSubscriber.create();
+    assignments.subscribeAssignments(assignmentsTestSubscriber::onNext);
+    final TestSubscriber<DispatchRetryExceeded> dispatchRetryExceededTestSubscriber =
+        TestSubscriber.create();
+    reDispatcher.subscribe(dispatchRetryExceededTestSubscriber::onNext);
+
+    bookings.forEach(bookingsSubject::onNext);
+
+    dispatchRetryExceededTestSubscriber.assertValueCount(bookingsCount);
+    assignmentsTestSubscriber.assertValueCount(0);
+  }
+
+  @Test
+  void testReDispatchForCaptainDecliningOffers() {
+    final int bookingsCount = 10;
+    final List<Booking> bookings = generateBookings(bookingsCount);
+    final ConcurrentMap<Location, Set<Captain>> captainsByLocation = bookings.stream()
+        .collect(toConcurrentMap(booking -> booking.pickupLocation,
+            booking -> randomCaptains(AT_LEAST_ONE)));
+    final Map<BookingId, AtomicInteger> retriesCount = new ConcurrentHashMap<>();
+    final ReDispatcher reDispatcher = new ReDispatcher(bookingsSubject, retriesCount,
+        dispatchRetryExceededSubject);
+    final Supply supply = new Supply(suppliedCaptainsSubject, captainsByLocation);
+    final Filter filter = new Filter(filteredCaptainsSubject, NO_CAPTAINS_FILTER);
+    final Sort sort = new Sort(sortedCaptainsSubject);
+    final Offers offers = new Offers(offersSubject, reDispatchesSubject);
+    final CaptainSimulator captainSimulator =
+        new CaptainSimulator(captainResponseSubject, ALWAYS_DECLINE_OFFERS);
     final Assignments assignments = new Assignments(assignmentsSubject, reDispatchesSubject);
     wire(reDispatcher, supply, filter, sort, offers, captainSimulator, assignments);
     final TestSubscriber<Assignment> assignmentsTestSubscriber = TestSubscriber.create();
@@ -129,9 +191,8 @@ class IntegrationTest {
     filter.subscribe(sort);
     sort.subscribe(offers);
     offers.subscribeOffers(captainSimulator);
-    offers.subscribeReDispatches(reDispatcher);
     captainSimulator.subscribe(assignments);
-    assignments.subscribeReDispatches(reDispatcher);
+    reDispatchesSubject.subscribe(reDispatcher);
   }
 
   private Booking randomBooking() {
