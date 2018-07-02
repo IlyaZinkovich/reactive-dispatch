@@ -72,7 +72,7 @@ class IntegrationTest {
     final Filter filter =
         new Filter(filteredCaptainsSubject, NO_CAPTAINS_FILTER, reDispatchesSubject);
     final Sort sort = new Sort(sortedCaptainsSubject);
-    final Offers offers = new Offers(offersSubject, reDispatchesSubject);
+    final Offers offers = new Offers(offersSubject);
     final CaptainSimulator captainSimulator =
         new CaptainSimulator(captainResponseSubject, ALWAYS_ACCEPT_OFFERS);
     final Assignments assignments = new Assignments(assignmentsSubject, reDispatchesSubject);
@@ -103,7 +103,7 @@ class IntegrationTest {
     final Filter filter =
         new Filter(filteredCaptainsSubject, NO_CAPTAINS_FILTER, reDispatchesSubject);
     final Sort sort = new Sort(sortedCaptainsSubject);
-    final Offers offers = new Offers(offersSubject, reDispatchesSubject);
+    final Offers offers = new Offers(offersSubject);
     final CaptainSimulator captainSimulator =
         new CaptainSimulator(captainResponseSubject, ALWAYS_ACCEPT_OFFERS);
     final Assignments assignments = new Assignments(assignmentsSubject, reDispatchesSubject);
@@ -134,7 +134,7 @@ class IntegrationTest {
     final Filter filter =
         new Filter(filteredCaptainsSubject, ALL_CAPTAINS_FILTER, reDispatchesSubject);
     final Sort sort = new Sort(sortedCaptainsSubject);
-    final Offers offers = new Offers(offersSubject, reDispatchesSubject);
+    final Offers offers = new Offers(offersSubject);
     final CaptainSimulator captainSimulator =
         new CaptainSimulator(captainResponseSubject, ALWAYS_ACCEPT_OFFERS);
     final Assignments assignments = new Assignments(assignmentsSubject, reDispatchesSubject);
@@ -165,7 +165,7 @@ class IntegrationTest {
     final Filter filter =
         new Filter(filteredCaptainsSubject, NO_CAPTAINS_FILTER, reDispatchesSubject);
     final Sort sort = new Sort(sortedCaptainsSubject);
-    final Offers offers = new Offers(offersSubject, reDispatchesSubject);
+    final Offers offers = new Offers(offersSubject);
     final CaptainSimulator captainSimulator =
         new CaptainSimulator(captainResponseSubject, ALWAYS_DECLINE_OFFERS);
     final Assignments assignments = new Assignments(assignmentsSubject, reDispatchesSubject);
