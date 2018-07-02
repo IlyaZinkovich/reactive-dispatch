@@ -1,5 +1,6 @@
 package io.github.ilyazinkovich.reactive.dispatch.offer;
 
+import io.github.ilyazinkovich.reactive.dispatch.redispatch.ReDispatch;
 import io.github.ilyazinkovich.reactive.dispatch.sort.SortedCaptains;
 import io.reactivex.functions.Consumer;
 import io.reactivex.subjects.PublishSubject;

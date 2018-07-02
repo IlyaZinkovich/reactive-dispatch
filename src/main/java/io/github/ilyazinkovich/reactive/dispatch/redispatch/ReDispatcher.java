@@ -2,7 +2,6 @@ package io.github.ilyazinkovich.reactive.dispatch.redispatch;
 
 import io.github.ilyazinkovich.reactive.dispatch.core.Booking;
 import io.github.ilyazinkovich.reactive.dispatch.core.BookingId;
-import io.github.ilyazinkovich.reactive.dispatch.offer.ReDispatch;
 import io.reactivex.functions.Consumer;
 import io.reactivex.subjects.PublishSubject;
 import java.util.Map;
@@ -26,11 +25,11 @@ public class ReDispatcher implements Consumer<ReDispatch> {
   public void accept(final ReDispatch reDispatch) {
     final BookingId bookingId = reDispatch.booking.id;
     retriesCount.putIfAbsent(bookingId, new AtomicInteger());
-    if (retriesCount.get(bookingId).incrementAndGet() > 3) {
+    if (retriesCount.get(bookingId).incrementAndGet() < 3) {
+      bookingsSubject.onNext(reDispatch.booking);
+    } else {
       System.out.printf("Retries count exceeded for booking %s%n", bookingId.uid);
       dispatchRetryExceededSubject.onNext(new DispatchRetryExceeded(reDispatch.booking));
-    } else {
-      bookingsSubject.onNext(reDispatch.booking);
     }
   }
 

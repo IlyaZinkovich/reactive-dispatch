@@ -9,8 +9,7 @@ public class CaptainResponse {
   public final CaptainId captainId;
   public final boolean accepted;
 
-  public CaptainResponse(final Booking booking,
-      final CaptainId captainId, final boolean accepted) {
+  CaptainResponse(final Booking booking, final CaptainId captainId, final boolean accepted) {
     this.booking = booking;
     this.captainId = captainId;
     this.accepted = accepted;

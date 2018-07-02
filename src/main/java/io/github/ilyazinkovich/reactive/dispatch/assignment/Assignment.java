@@ -8,7 +8,7 @@ public class Assignment {
   public final Booking booking;
   public final CaptainId captainId;
 
-  public Assignment(final Booking booking, final CaptainId captainId) {
+  Assignment(final Booking booking, final CaptainId captainId) {
     this.booking = booking;
     this.captainId = captainId;
   }

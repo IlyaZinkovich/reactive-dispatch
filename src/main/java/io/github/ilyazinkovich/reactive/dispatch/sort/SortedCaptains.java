@@ -9,7 +9,7 @@ public class SortedCaptains {
   public final List<Captain> captains;
   public final Booking booking;
 
-  public SortedCaptains(final Booking booking, final List<Captain> captains) {
+  SortedCaptains(final Booking booking, final List<Captain> captains) {
     this.booking = booking;
     this.captains = captains;
   }

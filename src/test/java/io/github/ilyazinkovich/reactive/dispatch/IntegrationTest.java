@@ -17,7 +17,7 @@ import io.github.ilyazinkovich.reactive.dispatch.filter.Filter;
 import io.github.ilyazinkovich.reactive.dispatch.filter.FilteredCaptains;
 import io.github.ilyazinkovich.reactive.dispatch.offer.Offer;
 import io.github.ilyazinkovich.reactive.dispatch.offer.Offers;
-import io.github.ilyazinkovich.reactive.dispatch.offer.ReDispatch;
+import io.github.ilyazinkovich.reactive.dispatch.redispatch.ReDispatch;
 import io.github.ilyazinkovich.reactive.dispatch.redispatch.DispatchRetryExceeded;
 import io.github.ilyazinkovich.reactive.dispatch.redispatch.ReDispatcher;
 import io.github.ilyazinkovich.reactive.dispatch.sort.Sort;
@@ -43,6 +43,7 @@ class IntegrationTest {
   private static final Random random = new Random();
   private static final Supplier<Boolean> ALWAYS_ACCEPT_OFFERS = () -> true;
   private static final Supplier<Integer> AT_LEAST_ONE = () -> random.nextInt(8) + 1;
+  private static final Supplier<Integer> ZERO = () -> 0;
   private static final Predicate<Captain> NO_CAPTAIN_FILTER = captain -> true;
   private final PublishSubject<Booking> bookingsSubject = PublishSubject.create();
   private final PublishSubject<ReDispatch> reDispatchesSubject = PublishSubject.create();
@@ -58,11 +59,10 @@ class IntegrationTest {
   @Test
   void test() {
     final int bookingsCount = 10;
-    final List<Booking> bookings = Stream.generate(this::randomBooking)
-        .limit(bookingsCount).collect(toList());
+    final List<Booking> bookings = generateBookings(bookingsCount);
     final ConcurrentMap<Location, Set<Captain>> captainsByLocation = bookings.stream()
-        .collect(toConcurrentMap(booking -> booking.pickupLocation, booking -> randomCaptains(
-            AT_LEAST_ONE)));
+        .collect(toConcurrentMap(booking -> booking.pickupLocation,
+            booking -> randomCaptains(AT_LEAST_ONE)));
     final Map<BookingId, AtomicInteger> retriesCount = new ConcurrentHashMap<>();
     final ReDispatcher reDispatcher = new ReDispatcher(bookingsSubject, retriesCount,
         dispatchRetryExceededSubject);
@@ -82,8 +82,43 @@ class IntegrationTest {
 
     bookings.forEach(bookingsSubject::onNext);
 
-    assignmentsTestSubscriber.assertValueCount(10);
+    assignmentsTestSubscriber.assertValueCount(bookingsCount);
     dispatchRetryExceededTestSubscriber.assertValueCount(0);
+  }
+
+  @Test
+  void testReDispatchForEmptySupply() {
+    final int bookingsCount = 1;
+    final List<Booking> bookings = generateBookings(bookingsCount);
+    final ConcurrentMap<Location, Set<Captain>> captainsByLocation = bookings.stream()
+        .collect(toConcurrentMap(booking -> booking.pickupLocation,
+            booking -> randomCaptains(ZERO)));
+    final Map<BookingId, AtomicInteger> retriesCount = new ConcurrentHashMap<>();
+    final ReDispatcher reDispatcher = new ReDispatcher(bookingsSubject, retriesCount,
+        dispatchRetryExceededSubject);
+    final Supply supply = new Supply(suppliedCaptainsSubject, captainsByLocation);
+    final Filter filter = new Filter(filteredCaptainsSubject, NO_CAPTAIN_FILTER);
+    final Sort sort = new Sort(sortedCaptainsSubject);
+    final Offers offers = new Offers(offersSubject, reDispatchesSubject);
+    final CaptainSimulator captainSimulator =
+        new CaptainSimulator(captainResponseSubject, ALWAYS_ACCEPT_OFFERS);
+    final Assignments assignments = new Assignments(assignmentsSubject, reDispatchesSubject);
+    wire(reDispatcher, supply, filter, sort, offers, captainSimulator, assignments);
+    final TestSubscriber<Assignment> assignmentsTestSubscriber = TestSubscriber.create();
+    assignments.subscribeAssignments(assignmentsTestSubscriber::onNext);
+    final TestSubscriber<DispatchRetryExceeded> dispatchRetryExceededTestSubscriber =
+        TestSubscriber.create();
+    reDispatcher.subscribe(dispatchRetryExceededTestSubscriber::onNext);
+
+    bookings.forEach(bookingsSubject::onNext);
+
+    dispatchRetryExceededTestSubscriber.assertValueCount(bookingsCount);
+    assignmentsTestSubscriber.assertValueCount(0);
+  }
+
+  private List<Booking> generateBookings(final int bookingsCount) {
+    return Stream.generate(this::randomBooking)
+        .limit(bookingsCount).collect(toList());
   }
 
   private void wire(final ReDispatcher reDispatcher, final Supply supply, final Filter filter,

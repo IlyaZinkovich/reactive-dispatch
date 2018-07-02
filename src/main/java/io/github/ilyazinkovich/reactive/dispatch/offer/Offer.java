@@ -9,8 +9,7 @@ public class Offer {
   public final Booking booking;
   public final CaptainId captainId;
 
-  public Offer(final Booking booking,
-      final CaptainId captainId) {
+  Offer(final Booking booking, final CaptainId captainId) {
     this.booking = booking;
     this.captainId = captainId;
   }
