@@ -1,4 +1,4 @@
-package io.github.ilyazinkovich.reactive.dispatch;
+package io.github.ilyazinkovich.reactive.dispatch.core;
 
 import java.util.Objects;
 import java.util.UUID;

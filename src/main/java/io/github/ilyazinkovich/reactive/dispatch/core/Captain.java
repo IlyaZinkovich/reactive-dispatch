@@ -1,11 +1,11 @@
-package io.github.ilyazinkovich.reactive.dispatch;
+package io.github.ilyazinkovich.reactive.dispatch.core;
 
 import java.util.Comparator;
 import java.util.Random;
 
 public class Captain {
 
-  final CaptainId id;
+  public final CaptainId id;
 
   public Captain(final CaptainId id) {
     this.id = id;

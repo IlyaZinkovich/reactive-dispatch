@@ -1,21 +1,23 @@
-package io.github.ilyazinkovich.reactive.dispatch;
+package io.github.ilyazinkovich.reactive.dispatch.sort;
 
 import static java.util.stream.Collectors.toList;
 
+import io.github.ilyazinkovich.reactive.dispatch.core.Captain;
+import io.github.ilyazinkovich.reactive.dispatch.filter.FilteredCaptains;
 import io.reactivex.Flowable;
 import java.util.List;
 
 public class Sort {
 
-  final Flowable<SortedCaptains> sortedCaptains;
+  public final Flowable<SortedCaptains> sortedCaptainsStream;
 
   public Sort(final Flowable<FilteredCaptains> filteredCaptains) {
-    this.sortedCaptains = filteredCaptains.map(this::sortCaptains);
+    this.sortedCaptainsStream = filteredCaptains.map(this::sortCaptains);
   }
 
   private SortedCaptains sortCaptains(final FilteredCaptains filteredCaptains) {
     final List<Captain> sortedCaptains = filteredCaptains.captains.stream()
         .sorted(Captain.comparator()).collect(toList());
-    return new SortedCaptains(filteredCaptains.bookingId, sortedCaptains);
+    return new SortedCaptains(filteredCaptains.booking, sortedCaptains);
   }
 }

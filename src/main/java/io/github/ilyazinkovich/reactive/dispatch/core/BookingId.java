@@ -1,11 +1,11 @@
-package io.github.ilyazinkovich.reactive.dispatch;
+package io.github.ilyazinkovich.reactive.dispatch.core;
 
 import java.util.Objects;
 import java.util.UUID;
 
 public class BookingId {
 
-  final String uid;
+  public final String uid;
 
   public BookingId(final String uid) {
     this.uid = uid;

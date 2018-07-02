@@ -1,11 +1,24 @@
 package io.github.ilyazinkovich.reactive.dispatch;
 
+import static io.reactivex.BackpressureStrategy.BUFFER;
 import static java.util.stream.Collectors.toConcurrentMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import io.reactivex.Flowable;
+import io.github.ilyazinkovich.reactive.dispatch.assignment.Assignments;
+import io.github.ilyazinkovich.reactive.dispatch.captain.CaptainSimulator;
+import io.github.ilyazinkovich.reactive.dispatch.core.Booking;
+import io.github.ilyazinkovich.reactive.dispatch.core.BookingId;
+import io.github.ilyazinkovich.reactive.dispatch.core.Captain;
+import io.github.ilyazinkovich.reactive.dispatch.core.CaptainId;
+import io.github.ilyazinkovich.reactive.dispatch.core.Location;
+import io.github.ilyazinkovich.reactive.dispatch.filter.Filter;
+import io.github.ilyazinkovich.reactive.dispatch.offer.Offers;
+import io.github.ilyazinkovich.reactive.dispatch.offer.ReDispatch;
+import io.github.ilyazinkovich.reactive.dispatch.redispatch.ReDispatcher;
+import io.github.ilyazinkovich.reactive.dispatch.sort.Sort;
+import io.github.ilyazinkovich.reactive.dispatch.supply.Supply;
+import io.reactivex.subjects.PublishSubject;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -18,19 +31,27 @@ class IntegrationTest {
   private final Random random = new Random();
 
   @Test
-  void test() {
+  void test() throws InterruptedException {
     final int bookingsCount = 10;
     final List<Booking> bookings = Stream.generate(this::randomBooking)
         .limit(bookingsCount).collect(toList());
     final ConcurrentMap<Location, Set<Captain>> captainsByLocation = bookings.stream()
         .collect(toConcurrentMap(booking -> booking.pickupLocation, booking -> randomCaptains()));
-    final Supply supply = new Supply(Flowable.fromIterable(bookings), captainsByLocation);
-    final Filter filter = new Filter(supply.suppliedCaptains);
-    final Sort sort = new Sort(filter.filteredCaptains);
-    final Offers offers = new Offers(sort.sortedCaptains);
-    final int offersCount = offers.offers.test().valueCount();
-    final int reDispatchesCount = offers.reDispatches.test().valueCount();
-    assertEquals(bookingsCount, offersCount + reDispatchesCount);
+    final PublishSubject<ReDispatch> reDispatchesSubject = PublishSubject.create();
+    final PublishSubject<Booking> bookingsSubject = PublishSubject.create();
+    final ReDispatcher reDispatcher =
+        new ReDispatcher(bookingsSubject, reDispatchesSubject.toFlowable(BUFFER));
+    final Supply supply = new Supply(bookingsSubject.toFlowable(BUFFER), captainsByLocation);
+    final Filter filter = new Filter(supply.suppliedCaptainsStream);
+    final Sort sort = new Sort(filter.filteredCaptainsStream);
+    final Offers offers = new Offers(sort.sortedCaptainsStream, reDispatchesSubject);
+    final CaptainSimulator captainSimulator = new CaptainSimulator(offers.offersStream);
+    final Assignments assignments =
+        new Assignments(captainSimulator.captainResponseStream, reDispatchesSubject);
+    assignments.assignmentsStream.subscribe(assignment ->
+        System.out.printf("Assigned captain %s to booking %s%n",
+            assignment.captainId, assignment.booking.id));
+    Thread.sleep(10000);
   }
 
   private Booking randomBooking() {

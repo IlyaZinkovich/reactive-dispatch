@@ -1,9 +1,9 @@
-package io.github.ilyazinkovich.reactive.dispatch;
+package io.github.ilyazinkovich.reactive.dispatch.core;
 
 public class Booking {
 
-  final BookingId id;
-  final Location pickupLocation;
+  public final BookingId id;
+  public final Location pickupLocation;
 
   public Booking(final BookingId id, final Location pickupLocation) {
     this.id = id;
