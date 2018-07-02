@@ -48,14 +48,14 @@ class IntegrationTest {
   private static final Predicate<Captain> NO_CAPTAINS_FILTER = captain -> true;
   private static final Predicate<Captain> ALL_CAPTAINS_FILTER = captain -> false;
   private final PublishSubject<Booking> bookingsSubject = PublishSubject.create();
-  private final PublishSubject<ReDispatch> reDispatchesSubject = PublishSubject.create();
+  private final PublishSubject<ReDispatch> reDispatchSubject = PublishSubject.create();
   private final PublishSubject<SuppliedCaptains> suppliedCaptainsSubject = PublishSubject.create();
   private final PublishSubject<FilteredCaptains> filteredCaptainsSubject = PublishSubject.create();
   private final PublishSubject<SortedCaptains> sortedCaptainsSubject = PublishSubject.create();
   private final PublishSubject<Offer> offersSubject = PublishSubject.create();
   private final PublishSubject<CaptainResponse> captainResponseSubject = PublishSubject.create();
   private final PublishSubject<Assignment> assignmentsSubject = PublishSubject.create();
-  private final PublishSubject<DispatchRetryExceeded> dispatchRetryExceededSubject =
+  private final PublishSubject<DispatchRetryExceeded> retryExceededSubject =
       PublishSubject.create();
 
   @Test
@@ -66,21 +66,22 @@ class IntegrationTest {
         generateCaptainsPerBooking(bookings, AT_LEAST_ONE);
     final Map<BookingId, AtomicInteger> retriesCount = new ConcurrentHashMap<>();
     final ReDispatcher reDispatcher =
-        new ReDispatcher(bookingsSubject, retriesCount, dispatchRetryExceededSubject);
-    final Supply supply = new Supply(suppliedCaptainsSubject, captainsByLocation);
+        new ReDispatcher(bookingsSubject::onNext, retriesCount, retryExceededSubject::onNext);
+    final Supply supply = new Supply(suppliedCaptainsSubject::onNext, captainsByLocation);
     final Filter filter =
-        new Filter(filteredCaptainsSubject, NO_CAPTAINS_FILTER, reDispatchesSubject);
-    final Sort sort = new Sort(sortedCaptainsSubject);
-    final Offers offers = new Offers(offersSubject);
+        new Filter(filteredCaptainsSubject::onNext, NO_CAPTAINS_FILTER, reDispatchSubject::onNext);
+    final Sort sort = new Sort(sortedCaptainsSubject::onNext);
+    final Offers offers = new Offers(offersSubject::onNext);
     final CaptainSimulator captainSimulator =
-        new CaptainSimulator(captainResponseSubject, ALWAYS_ACCEPT_OFFERS);
-    final Assignments assignments = new Assignments(assignmentsSubject, reDispatchesSubject);
+        new CaptainSimulator(captainResponseSubject::onNext, ALWAYS_ACCEPT_OFFERS);
+    final Assignments assignments =
+        new Assignments(assignmentsSubject::onNext, reDispatchSubject::onNext);
     wire(reDispatcher, supply, filter, sort, offers, captainSimulator, assignments);
     final TestSubscriber<Assignment> assignmentsTestSubscriber = TestSubscriber.create();
-    assignments.subscribeAssignments(assignmentsTestSubscriber::onNext);
+    assignmentsSubject.subscribe(assignmentsTestSubscriber::onNext);
     final TestSubscriber<DispatchRetryExceeded> dispatchRetryExceededTestSubscriber =
         TestSubscriber.create();
-    reDispatcher.subscribe(dispatchRetryExceededTestSubscriber::onNext);
+    retryExceededSubject.subscribe(dispatchRetryExceededTestSubscriber::onNext);
 
     bookings.forEach(bookingsSubject::onNext);
 
@@ -96,21 +97,22 @@ class IntegrationTest {
         generateCaptainsPerBooking(bookings, ZERO);
     final Map<BookingId, AtomicInteger> retriesCount = new ConcurrentHashMap<>();
     final ReDispatcher reDispatcher =
-        new ReDispatcher(bookingsSubject, retriesCount, dispatchRetryExceededSubject);
-    final Supply supply = new Supply(suppliedCaptainsSubject, captainsByLocation);
+        new ReDispatcher(bookingsSubject::onNext, retriesCount, retryExceededSubject::onNext);
+    final Supply supply = new Supply(suppliedCaptainsSubject::onNext, captainsByLocation);
     final Filter filter =
-        new Filter(filteredCaptainsSubject, NO_CAPTAINS_FILTER, reDispatchesSubject);
-    final Sort sort = new Sort(sortedCaptainsSubject);
-    final Offers offers = new Offers(offersSubject);
+        new Filter(filteredCaptainsSubject::onNext, NO_CAPTAINS_FILTER, reDispatchSubject::onNext);
+    final Sort sort = new Sort(sortedCaptainsSubject::onNext);
+    final Offers offers = new Offers(offersSubject::onNext);
     final CaptainSimulator captainSimulator =
-        new CaptainSimulator(captainResponseSubject, ALWAYS_ACCEPT_OFFERS);
-    final Assignments assignments = new Assignments(assignmentsSubject, reDispatchesSubject);
+        new CaptainSimulator(captainResponseSubject::onNext, ALWAYS_ACCEPT_OFFERS);
+    final Assignments assignments =
+        new Assignments(assignmentsSubject::onNext, reDispatchSubject::onNext);
     wire(reDispatcher, supply, filter, sort, offers, captainSimulator, assignments);
     final TestSubscriber<Assignment> assignmentsTestSubscriber = TestSubscriber.create();
-    assignments.subscribeAssignments(assignmentsTestSubscriber::onNext);
+    assignmentsSubject.subscribe(assignmentsTestSubscriber::onNext);
     final TestSubscriber<DispatchRetryExceeded> dispatchRetryExceededTestSubscriber =
         TestSubscriber.create();
-    reDispatcher.subscribe(dispatchRetryExceededTestSubscriber::onNext);
+    retryExceededSubject.subscribe(dispatchRetryExceededTestSubscriber::onNext);
 
     bookings.forEach(bookingsSubject::onNext);
 
@@ -126,21 +128,22 @@ class IntegrationTest {
         generateCaptainsPerBooking(bookings, AT_LEAST_ONE);
     final Map<BookingId, AtomicInteger> retriesCount = new ConcurrentHashMap<>();
     final ReDispatcher reDispatcher =
-        new ReDispatcher(bookingsSubject, retriesCount, dispatchRetryExceededSubject);
-    final Supply supply = new Supply(suppliedCaptainsSubject, captainsByLocation);
+        new ReDispatcher(bookingsSubject::onNext, retriesCount, retryExceededSubject::onNext);
+    final Supply supply = new Supply(suppliedCaptainsSubject::onNext, captainsByLocation);
     final Filter filter =
-        new Filter(filteredCaptainsSubject, ALL_CAPTAINS_FILTER, reDispatchesSubject);
-    final Sort sort = new Sort(sortedCaptainsSubject);
-    final Offers offers = new Offers(offersSubject);
+        new Filter(filteredCaptainsSubject::onNext, ALL_CAPTAINS_FILTER, reDispatchSubject::onNext);
+    final Sort sort = new Sort(sortedCaptainsSubject::onNext);
+    final Offers offers = new Offers(offersSubject::onNext);
     final CaptainSimulator captainSimulator =
-        new CaptainSimulator(captainResponseSubject, ALWAYS_ACCEPT_OFFERS);
-    final Assignments assignments = new Assignments(assignmentsSubject, reDispatchesSubject);
+        new CaptainSimulator(captainResponseSubject::onNext, ALWAYS_ACCEPT_OFFERS);
+    final Assignments assignments =
+        new Assignments(assignmentsSubject::onNext, reDispatchSubject::onNext);
     wire(reDispatcher, supply, filter, sort, offers, captainSimulator, assignments);
     final TestSubscriber<Assignment> assignmentsTestSubscriber = TestSubscriber.create();
-    assignments.subscribeAssignments(assignmentsTestSubscriber::onNext);
+    assignmentsSubject.subscribe(assignmentsTestSubscriber::onNext);
     final TestSubscriber<DispatchRetryExceeded> dispatchRetryExceededTestSubscriber =
         TestSubscriber.create();
-    reDispatcher.subscribe(dispatchRetryExceededTestSubscriber::onNext);
+    retryExceededSubject.subscribe(dispatchRetryExceededTestSubscriber::onNext);
 
     bookings.forEach(bookingsSubject::onNext);
 
@@ -156,21 +159,22 @@ class IntegrationTest {
         generateCaptainsPerBooking(bookings, AT_LEAST_ONE);
     final Map<BookingId, AtomicInteger> retriesCount = new ConcurrentHashMap<>();
     final ReDispatcher reDispatcher =
-        new ReDispatcher(bookingsSubject, retriesCount, dispatchRetryExceededSubject);
-    final Supply supply = new Supply(suppliedCaptainsSubject, captainsByLocation);
+        new ReDispatcher(bookingsSubject::onNext, retriesCount, retryExceededSubject::onNext);
+    final Supply supply = new Supply(suppliedCaptainsSubject::onNext, captainsByLocation);
     final Filter filter =
-        new Filter(filteredCaptainsSubject, NO_CAPTAINS_FILTER, reDispatchesSubject);
-    final Sort sort = new Sort(sortedCaptainsSubject);
-    final Offers offers = new Offers(offersSubject);
+        new Filter(filteredCaptainsSubject::onNext, NO_CAPTAINS_FILTER, reDispatchSubject::onNext);
+    final Sort sort = new Sort(sortedCaptainsSubject::onNext);
+    final Offers offers = new Offers(offersSubject::onNext);
     final CaptainSimulator captainSimulator =
-        new CaptainSimulator(captainResponseSubject, ALWAYS_DECLINE_OFFERS);
-    final Assignments assignments = new Assignments(assignmentsSubject, reDispatchesSubject);
+        new CaptainSimulator(captainResponseSubject::onNext, ALWAYS_DECLINE_OFFERS);
+    final Assignments assignments =
+        new Assignments(assignmentsSubject::onNext, reDispatchSubject::onNext);
     wire(reDispatcher, supply, filter, sort, offers, captainSimulator, assignments);
     final TestSubscriber<Assignment> assignmentsTestSubscriber = TestSubscriber.create();
-    assignments.subscribeAssignments(assignmentsTestSubscriber::onNext);
+    assignmentsSubject.subscribe(assignmentsTestSubscriber::onNext);
     final TestSubscriber<DispatchRetryExceeded> dispatchRetryExceededTestSubscriber =
         TestSubscriber.create();
-    reDispatcher.subscribe(dispatchRetryExceededTestSubscriber::onNext);
+    retryExceededSubject.subscribe(dispatchRetryExceededTestSubscriber::onNext);
 
     bookings.forEach(bookingsSubject::onNext);
 
@@ -192,13 +196,13 @@ class IntegrationTest {
   private void wire(final ReDispatcher reDispatcher, final Supply supply, final Filter filter,
       final Sort sort, final Offers offers, final CaptainSimulator captainSimulator,
       final Assignments assignments) {
-    bookingsSubject.subscribe(supply);
-    supply.subscribe(filter);
-    filter.subscribe(sort);
-    sort.subscribe(offers);
-    offers.subscribe(captainSimulator);
-    captainSimulator.subscribe(assignments);
-    reDispatchesSubject.subscribe(reDispatcher);
+    bookingsSubject.subscribe(supply::accept);
+    suppliedCaptainsSubject.subscribe(filter::accept);
+    filteredCaptainsSubject.subscribe(sort::accept);
+    sortedCaptainsSubject.subscribe(offers::accept);
+    offersSubject.subscribe(captainSimulator::accept);
+    captainResponseSubject.subscribe(assignments::accept);
+    reDispatchSubject.subscribe(reDispatcher::accept);
   }
 
   private Booking randomBooking() {
