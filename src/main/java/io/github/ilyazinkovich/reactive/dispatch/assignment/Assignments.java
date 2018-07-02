@@ -1,7 +1,7 @@
 package io.github.ilyazinkovich.reactive.dispatch.assignment;
 
 import io.github.ilyazinkovich.reactive.dispatch.captain.CaptainResponse;
-import io.github.ilyazinkovich.reactive.dispatch.redispatch.ReDispatch;
+import io.github.ilyazinkovich.reactive.dispatch.core.ReDispatch;
 import io.reactivex.functions.Consumer;
 import io.reactivex.subjects.PublishSubject;
 

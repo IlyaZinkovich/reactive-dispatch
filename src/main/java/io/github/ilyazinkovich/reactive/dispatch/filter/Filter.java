@@ -3,7 +3,7 @@ package io.github.ilyazinkovich.reactive.dispatch.filter;
 import static java.util.stream.Collectors.toSet;
 
 import io.github.ilyazinkovich.reactive.dispatch.core.Captain;
-import io.github.ilyazinkovich.reactive.dispatch.redispatch.ReDispatch;
+import io.github.ilyazinkovich.reactive.dispatch.core.ReDispatch;
 import io.github.ilyazinkovich.reactive.dispatch.supply.SuppliedCaptains;
 import io.reactivex.functions.Consumer;
 import io.reactivex.subjects.PublishSubject;

@@ -1,4 +1,4 @@
-package io.github.ilyazinkovich.reactive.dispatch.redispatch;
+package io.github.ilyazinkovich.reactive.dispatch.core;
 
 import io.github.ilyazinkovich.reactive.dispatch.core.Booking;
 

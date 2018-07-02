@@ -18,7 +18,7 @@ import io.github.ilyazinkovich.reactive.dispatch.filter.FilteredCaptains;
 import io.github.ilyazinkovich.reactive.dispatch.offer.Offer;
 import io.github.ilyazinkovich.reactive.dispatch.offer.Offers;
 import io.github.ilyazinkovich.reactive.dispatch.redispatch.DispatchRetryExceeded;
-import io.github.ilyazinkovich.reactive.dispatch.redispatch.ReDispatch;
+import io.github.ilyazinkovich.reactive.dispatch.core.ReDispatch;
 import io.github.ilyazinkovich.reactive.dispatch.redispatch.ReDispatcher;
 import io.github.ilyazinkovich.reactive.dispatch.sort.Sort;
 import io.github.ilyazinkovich.reactive.dispatch.sort.SortedCaptains;

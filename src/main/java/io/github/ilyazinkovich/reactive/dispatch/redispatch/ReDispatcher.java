@@ -2,6 +2,7 @@ package io.github.ilyazinkovich.reactive.dispatch.redispatch;
 
 import io.github.ilyazinkovich.reactive.dispatch.core.Booking;
 import io.github.ilyazinkovich.reactive.dispatch.core.BookingId;
+import io.github.ilyazinkovich.reactive.dispatch.core.ReDispatch;
 import io.reactivex.functions.Consumer;
 import io.reactivex.subjects.PublishSubject;
 import java.util.Map;
