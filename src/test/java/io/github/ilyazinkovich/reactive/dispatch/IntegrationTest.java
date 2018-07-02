@@ -67,28 +67,36 @@ class IntegrationTest {
     final ReDispatcher reDispatcher = new ReDispatcher(bookingsSubject, retriesCount,
         dispatchRetryExceededSubject);
     final Supply supply = new Supply(suppliedCaptainsSubject, captainsByLocation);
-    bookingsSubject.subscribe(supply);
     final Filter filter = new Filter(filteredCaptainsSubject, NO_CAPTAIN_FILTER);
-    supply.subscribe(filter);
     final Sort sort = new Sort(sortedCaptainsSubject);
-    filter.subscribe(sort);
     final Offers offers = new Offers(offersSubject, reDispatchesSubject);
-    sort.subscribe(offers);
     final CaptainSimulator captainSimulator =
         new CaptainSimulator(captainResponseSubject, ALWAYS_ACCEPT_OFFERS);
-    offers.subscribeOffers(captainSimulator);
-    offers.subscribeReDispatches(reDispatcher);
     final Assignments assignments = new Assignments(assignmentsSubject, reDispatchesSubject);
-    captainSimulator.subscribe(assignments);
-    assignments.subscribeReDispatches(reDispatcher);
+    wire(reDispatcher, supply, filter, sort, offers, captainSimulator, assignments);
     final TestSubscriber<Assignment> assignmentsTestSubscriber = TestSubscriber.create();
     assignments.subscribeAssignments(assignmentsTestSubscriber::onNext);
     final TestSubscriber<DispatchRetryExceeded> dispatchRetryExceededTestSubscriber =
         TestSubscriber.create();
     reDispatcher.subscribe(dispatchRetryExceededTestSubscriber::onNext);
+
     bookings.forEach(bookingsSubject::onNext);
+
     assignmentsTestSubscriber.assertValueCount(10);
     dispatchRetryExceededTestSubscriber.assertValueCount(0);
+  }
+
+  private void wire(final ReDispatcher reDispatcher, final Supply supply, final Filter filter,
+      final Sort sort, final Offers offers, final CaptainSimulator captainSimulator,
+      final Assignments assignments) {
+    bookingsSubject.subscribe(supply);
+    supply.subscribe(filter);
+    filter.subscribe(sort);
+    sort.subscribe(offers);
+    offers.subscribeOffers(captainSimulator);
+    offers.subscribeReDispatches(reDispatcher);
+    captainSimulator.subscribe(assignments);
+    assignments.subscribeReDispatches(reDispatcher);
   }
 
   private Booking randomBooking() {
