@@ -69,7 +69,8 @@ class IntegrationTest {
     final ReDispatcher reDispatcher = new ReDispatcher(bookingsSubject, retriesCount,
         dispatchRetryExceededSubject);
     final Supply supply = new Supply(suppliedCaptainsSubject, captainsByLocation);
-    final Filter filter = new Filter(filteredCaptainsSubject, NO_CAPTAINS_FILTER);
+    final Filter filter =
+        new Filter(filteredCaptainsSubject, NO_CAPTAINS_FILTER, reDispatchesSubject);
     final Sort sort = new Sort(sortedCaptainsSubject);
     final Offers offers = new Offers(offersSubject, reDispatchesSubject);
     final CaptainSimulator captainSimulator =
@@ -99,7 +100,8 @@ class IntegrationTest {
     final ReDispatcher reDispatcher = new ReDispatcher(bookingsSubject, retriesCount,
         dispatchRetryExceededSubject);
     final Supply supply = new Supply(suppliedCaptainsSubject, captainsByLocation);
-    final Filter filter = new Filter(filteredCaptainsSubject, NO_CAPTAINS_FILTER);
+    final Filter filter =
+        new Filter(filteredCaptainsSubject, NO_CAPTAINS_FILTER, reDispatchesSubject);
     final Sort sort = new Sort(sortedCaptainsSubject);
     final Offers offers = new Offers(offersSubject, reDispatchesSubject);
     final CaptainSimulator captainSimulator =
@@ -129,7 +131,8 @@ class IntegrationTest {
     final ReDispatcher reDispatcher = new ReDispatcher(bookingsSubject, retriesCount,
         dispatchRetryExceededSubject);
     final Supply supply = new Supply(suppliedCaptainsSubject, captainsByLocation);
-    final Filter filter = new Filter(filteredCaptainsSubject, ALL_CAPTAINS_FILTER);
+    final Filter filter =
+        new Filter(filteredCaptainsSubject, ALL_CAPTAINS_FILTER, reDispatchesSubject);
     final Sort sort = new Sort(sortedCaptainsSubject);
     final Offers offers = new Offers(offersSubject, reDispatchesSubject);
     final CaptainSimulator captainSimulator =
@@ -159,7 +162,8 @@ class IntegrationTest {
     final ReDispatcher reDispatcher = new ReDispatcher(bookingsSubject, retriesCount,
         dispatchRetryExceededSubject);
     final Supply supply = new Supply(suppliedCaptainsSubject, captainsByLocation);
-    final Filter filter = new Filter(filteredCaptainsSubject, NO_CAPTAINS_FILTER);
+    final Filter filter =
+        new Filter(filteredCaptainsSubject, NO_CAPTAINS_FILTER, reDispatchesSubject);
     final Sort sort = new Sort(sortedCaptainsSubject);
     final Offers offers = new Offers(offersSubject, reDispatchesSubject);
     final CaptainSimulator captainSimulator =
