@@ -11,11 +11,11 @@ public class ReDispatcher {
 
   private final Consumer<Booking> bookingsSubject;
   private final Map<BookingId, AtomicInteger> retriesCount;
-  private final Consumer<DispatchRetryExceeded> dispatchRetryExceededSubject;
+  private final Consumer<RetriesExceeded> dispatchRetryExceededSubject;
 
   public ReDispatcher(final Consumer<Booking> bookingsSubject,
       final Map<BookingId, AtomicInteger> retriesCount,
-      final Consumer<DispatchRetryExceeded> dispatchRetryExceededSubject) {
+      final Consumer<RetriesExceeded> dispatchRetryExceededSubject) {
     this.bookingsSubject = bookingsSubject;
     this.retriesCount = retriesCount;
     this.dispatchRetryExceededSubject = dispatchRetryExceededSubject;
@@ -28,7 +28,7 @@ public class ReDispatcher {
       bookingsSubject.accept(reDispatch.booking);
     } else {
       System.out.printf("Retries count exceeded for booking %s%n", bookingId.uid);
-      dispatchRetryExceededSubject.accept(new DispatchRetryExceeded(reDispatch.booking));
+      dispatchRetryExceededSubject.accept(new RetriesExceeded(reDispatch.booking));
     }
   }
 }

@@ -19,8 +19,8 @@ import io.github.ilyazinkovich.reactive.dispatch.filter.Filter;
 import io.github.ilyazinkovich.reactive.dispatch.filter.FilteredCaptains;
 import io.github.ilyazinkovich.reactive.dispatch.offer.Offer;
 import io.github.ilyazinkovich.reactive.dispatch.offer.Offers;
-import io.github.ilyazinkovich.reactive.dispatch.redispatch.DispatchRetryExceeded;
 import io.github.ilyazinkovich.reactive.dispatch.redispatch.ReDispatcher;
+import io.github.ilyazinkovich.reactive.dispatch.redispatch.RetriesExceeded;
 import io.github.ilyazinkovich.reactive.dispatch.sort.Sort;
 import io.github.ilyazinkovich.reactive.dispatch.sort.SortedCaptains;
 import io.github.ilyazinkovich.reactive.dispatch.supply.SuppliedCaptains;
@@ -58,8 +58,7 @@ class IntegrationTest {
   private final PublishSubject<Offer> offersSubject = PublishSubject.create();
   private final PublishSubject<CaptainResponse> captainResponseSubject = PublishSubject.create();
   private final PublishSubject<Assignment> assignmentsSubject = PublishSubject.create();
-  private final PublishSubject<DispatchRetryExceeded> retryExceededSubject =
-      PublishSubject.create();
+  private final PublishSubject<RetriesExceeded> retriesExceededSubject = PublishSubject.create();
 
   @Test
   void testOptimisticFlow() {
@@ -69,7 +68,7 @@ class IntegrationTest {
         generateCaptainsPerBooking(bookings, AT_LEAST_ONE);
     final Map<BookingId, AtomicInteger> retriesCount = new ConcurrentHashMap<>();
     final ReDispatcher reDispatcher =
-        new ReDispatcher(bookingsSubject::onNext, retriesCount, retryExceededSubject::onNext);
+        new ReDispatcher(bookingsSubject::onNext, retriesCount, retriesExceededSubject::onNext);
     final Supply supply = new Supply(suppliedCaptainsSubject::onNext, captainsByLocation);
     final Filter filter =
         new Filter(filteredCaptainsSubject::onNext, NO_CAPTAINS_FILTER, reDispatchSubject::onNext);
@@ -82,9 +81,9 @@ class IntegrationTest {
     wire(reDispatcher, supply, filter, sort, offers, captainSimulator, assignments);
     final TestSubscriber<Assignment> assignmentsTestSubscriber = TestSubscriber.create();
     assignmentsSubject.subscribe(assignmentsTestSubscriber::onNext);
-    final TestSubscriber<DispatchRetryExceeded> dispatchRetryExceededTestSubscriber =
+    final TestSubscriber<RetriesExceeded> dispatchRetryExceededTestSubscriber =
         TestSubscriber.create();
-    retryExceededSubject.subscribe(dispatchRetryExceededTestSubscriber::onNext);
+    retriesExceededSubject.subscribe(dispatchRetryExceededTestSubscriber::onNext);
 
     bookings.forEach(bookingsSubject::onNext);
 
@@ -100,7 +99,7 @@ class IntegrationTest {
         generateCaptainsPerBooking(bookings, ZERO);
     final Map<BookingId, AtomicInteger> retriesCount = new ConcurrentHashMap<>();
     final ReDispatcher reDispatcher =
-        new ReDispatcher(bookingsSubject::onNext, retriesCount, retryExceededSubject::onNext);
+        new ReDispatcher(bookingsSubject::onNext, retriesCount, retriesExceededSubject::onNext);
     final Supply supply = new Supply(suppliedCaptainsSubject::onNext, captainsByLocation);
     final Filter filter =
         new Filter(filteredCaptainsSubject::onNext, NO_CAPTAINS_FILTER, reDispatchSubject::onNext);
@@ -113,9 +112,9 @@ class IntegrationTest {
     wire(reDispatcher, supply, filter, sort, offers, captainSimulator, assignments);
     final TestSubscriber<Assignment> assignmentsTestSubscriber = TestSubscriber.create();
     assignmentsSubject.subscribe(assignmentsTestSubscriber::onNext);
-    final TestSubscriber<DispatchRetryExceeded> dispatchRetryExceededTestSubscriber =
+    final TestSubscriber<RetriesExceeded> dispatchRetryExceededTestSubscriber =
         TestSubscriber.create();
-    retryExceededSubject.subscribe(dispatchRetryExceededTestSubscriber::onNext);
+    retriesExceededSubject.subscribe(dispatchRetryExceededTestSubscriber::onNext);
 
     bookings.forEach(bookingsSubject::onNext);
 
@@ -131,7 +130,7 @@ class IntegrationTest {
         generateCaptainsPerBooking(bookings, AT_LEAST_ONE);
     final Map<BookingId, AtomicInteger> retriesCount = new ConcurrentHashMap<>();
     final ReDispatcher reDispatcher =
-        new ReDispatcher(bookingsSubject::onNext, retriesCount, retryExceededSubject::onNext);
+        new ReDispatcher(bookingsSubject::onNext, retriesCount, retriesExceededSubject::onNext);
     final Supply supply = new Supply(suppliedCaptainsSubject::onNext, captainsByLocation);
     final Filter filter =
         new Filter(filteredCaptainsSubject::onNext, ALL_CAPTAINS_FILTER, reDispatchSubject::onNext);
@@ -144,9 +143,9 @@ class IntegrationTest {
     wire(reDispatcher, supply, filter, sort, offers, captainSimulator, assignments);
     final TestSubscriber<Assignment> assignmentsTestSubscriber = TestSubscriber.create();
     assignmentsSubject.subscribe(assignmentsTestSubscriber::onNext);
-    final TestSubscriber<DispatchRetryExceeded> dispatchRetryExceededTestSubscriber =
+    final TestSubscriber<RetriesExceeded> dispatchRetryExceededTestSubscriber =
         TestSubscriber.create();
-    retryExceededSubject.subscribe(dispatchRetryExceededTestSubscriber::onNext);
+    retriesExceededSubject.subscribe(dispatchRetryExceededTestSubscriber::onNext);
 
     bookings.forEach(bookingsSubject::onNext);
 
@@ -162,7 +161,7 @@ class IntegrationTest {
         generateCaptainsPerBooking(bookings, AT_LEAST_ONE);
     final Map<BookingId, AtomicInteger> retriesCount = new ConcurrentHashMap<>();
     final ReDispatcher reDispatcher =
-        new ReDispatcher(bookingsSubject::onNext, retriesCount, retryExceededSubject::onNext);
+        new ReDispatcher(bookingsSubject::onNext, retriesCount, retriesExceededSubject::onNext);
     final Supply supply = new Supply(suppliedCaptainsSubject::onNext, captainsByLocation);
     final Filter filter =
         new Filter(filteredCaptainsSubject::onNext, NO_CAPTAINS_FILTER, reDispatchSubject::onNext);
@@ -175,9 +174,9 @@ class IntegrationTest {
     wire(reDispatcher, supply, filter, sort, offers, captainSimulator, assignments);
     final TestSubscriber<Assignment> assignmentsTestSubscriber = TestSubscriber.create();
     assignmentsSubject.subscribe(assignmentsTestSubscriber::onNext);
-    final TestSubscriber<DispatchRetryExceeded> dispatchRetryExceededTestSubscriber =
+    final TestSubscriber<RetriesExceeded> dispatchRetryExceededTestSubscriber =
         TestSubscriber.create();
-    retryExceededSubject.subscribe(dispatchRetryExceededTestSubscriber::onNext);
+    retriesExceededSubject.subscribe(dispatchRetryExceededTestSubscriber::onNext);
 
     bookings.forEach(bookingsSubject::onNext);
 
@@ -193,7 +192,7 @@ class IntegrationTest {
         generateCaptainsPerBooking(bookings, AT_MOST_EIGHT);
     final Map<BookingId, AtomicInteger> retriesCount = new ConcurrentHashMap<>();
     final ReDispatcher reDispatcher =
-        new ReDispatcher(bookingsSubject::onNext, retriesCount, retryExceededSubject::onNext);
+        new ReDispatcher(bookingsSubject::onNext, retriesCount, retriesExceededSubject::onNext);
     final Supply supply = new Supply(suppliedCaptainsSubject::onNext, captainsByLocation);
     final Filter filter =
         new Filter(filteredCaptainsSubject::onNext, RANDOM_CAPTAIN, reDispatchSubject::onNext);
@@ -206,9 +205,9 @@ class IntegrationTest {
     wire(reDispatcher, supply, filter, sort, offers, captainSimulator, assignments);
     final TestSubscriber<Assignment> assignmentsTestSubscriber = TestSubscriber.create();
     assignmentsSubject.subscribe(assignmentsTestSubscriber::onNext);
-    final TestSubscriber<DispatchRetryExceeded> dispatchRetryExceededTestSubscriber =
+    final TestSubscriber<RetriesExceeded> dispatchRetryExceededTestSubscriber =
         TestSubscriber.create();
-    retryExceededSubject.subscribe(dispatchRetryExceededTestSubscriber::onNext);
+    retriesExceededSubject.subscribe(dispatchRetryExceededTestSubscriber::onNext);
 
     bookings.forEach(bookingsSubject::onNext);
 
