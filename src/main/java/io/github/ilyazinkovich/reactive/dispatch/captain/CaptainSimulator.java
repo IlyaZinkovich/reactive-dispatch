@@ -3,15 +3,17 @@ package io.github.ilyazinkovich.reactive.dispatch.captain;
 import io.github.ilyazinkovich.reactive.dispatch.offer.Offer;
 import io.reactivex.functions.Consumer;
 import io.reactivex.subjects.PublishSubject;
-import java.util.Random;
+import java.util.function.Supplier;
 
 public class CaptainSimulator implements Consumer<Offer> {
 
-  private final Random random = new Random();
   private final PublishSubject<CaptainResponse> captainResponseSubject;
+  private final Supplier<Boolean> behaviour;
 
-  public CaptainSimulator(final PublishSubject<CaptainResponse> captainResponseSubject) {
+  public CaptainSimulator(final PublishSubject<CaptainResponse> captainResponseSubject,
+      final Supplier<Boolean> behaviour) {
     this.captainResponseSubject = captainResponseSubject;
+    this.behaviour = behaviour;
   }
 
   public void subscribe(final Consumer<CaptainResponse> consumer) {
@@ -21,7 +23,7 @@ public class CaptainSimulator implements Consumer<Offer> {
   @Override
   public void accept(final Offer offer) {
     final CaptainResponse captainResponse =
-        new CaptainResponse(offer.booking, offer.captainId, random.nextBoolean());
+        new CaptainResponse(offer.booking, offer.captainId, behaviour.get());
     captainResponseSubject.onNext(captainResponse);
   }
 }

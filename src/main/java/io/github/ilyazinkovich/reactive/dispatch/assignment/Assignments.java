@@ -27,7 +27,11 @@ public class Assignments implements Consumer<CaptainResponse> {
     }
   }
 
-  public void subscribe(final Consumer<Assignment> consumer) {
+  public void subscribeAssignments(final Consumer<Assignment> consumer) {
     assignmentsSubject.subscribe(consumer);
+  }
+
+  public void subscribeReDispatches(final Consumer<ReDispatch> consumer) {
+    reDispatchesSubject.subscribe(consumer);
   }
 }

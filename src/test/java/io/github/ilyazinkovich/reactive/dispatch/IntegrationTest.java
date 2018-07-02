@@ -18,12 +18,14 @@ import io.github.ilyazinkovich.reactive.dispatch.filter.FilteredCaptains;
 import io.github.ilyazinkovich.reactive.dispatch.offer.Offer;
 import io.github.ilyazinkovich.reactive.dispatch.offer.Offers;
 import io.github.ilyazinkovich.reactive.dispatch.offer.ReDispatch;
+import io.github.ilyazinkovich.reactive.dispatch.redispatch.DispatchRetryExceeded;
 import io.github.ilyazinkovich.reactive.dispatch.redispatch.ReDispatcher;
 import io.github.ilyazinkovich.reactive.dispatch.sort.Sort;
 import io.github.ilyazinkovich.reactive.dispatch.sort.SortedCaptains;
 import io.github.ilyazinkovich.reactive.dispatch.supply.SuppliedCaptains;
 import io.github.ilyazinkovich.reactive.dispatch.supply.Supply;
 import io.reactivex.subjects.PublishSubject;
+import io.reactivex.subscribers.TestSubscriber;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -31,12 +33,17 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 class IntegrationTest {
 
-  private final Random random = new Random();
+  private static final Random random = new Random();
+  private static final Supplier<Boolean> ALWAYS_ACCEPT_OFFERS = () -> true;
+  private static final Supplier<Integer> AT_LEAST_ONE = () -> random.nextInt(8) + 1;
+  private static final Predicate<Captain> NO_CAPTAIN_FILTER = captain -> true;
   private final PublishSubject<Booking> bookingsSubject = PublishSubject.create();
   private final PublishSubject<ReDispatch> reDispatchesSubject = PublishSubject.create();
   private final PublishSubject<SuppliedCaptains> suppliedCaptainsSubject = PublishSubject.create();
@@ -45,6 +52,8 @@ class IntegrationTest {
   private final PublishSubject<Offer> offersSubject = PublishSubject.create();
   private final PublishSubject<CaptainResponse> captainResponseSubject = PublishSubject.create();
   private final PublishSubject<Assignment> assignmentsSubject = PublishSubject.create();
+  private final PublishSubject<DispatchRetryExceeded> dispatchRetryExceededSubject =
+      PublishSubject.create();
 
   @Test
   void test() {
@@ -52,27 +61,34 @@ class IntegrationTest {
     final List<Booking> bookings = Stream.generate(this::randomBooking)
         .limit(bookingsCount).collect(toList());
     final ConcurrentMap<Location, Set<Captain>> captainsByLocation = bookings.stream()
-        .collect(toConcurrentMap(booking -> booking.pickupLocation, booking -> randomCaptains()));
+        .collect(toConcurrentMap(booking -> booking.pickupLocation, booking -> randomCaptains(
+            AT_LEAST_ONE)));
     final Map<BookingId, AtomicInteger> retriesCount = new ConcurrentHashMap<>();
-    final ReDispatcher reDispatcher = new ReDispatcher(bookingsSubject, retriesCount);
-    reDispatchesSubject.subscribe(reDispatcher);
+    final ReDispatcher reDispatcher = new ReDispatcher(bookingsSubject, retriesCount,
+        dispatchRetryExceededSubject);
     final Supply supply = new Supply(suppliedCaptainsSubject, captainsByLocation);
     bookingsSubject.subscribe(supply);
-    final Filter filter = new Filter(filteredCaptainsSubject);
+    final Filter filter = new Filter(filteredCaptainsSubject, NO_CAPTAIN_FILTER);
     supply.subscribe(filter);
     final Sort sort = new Sort(sortedCaptainsSubject);
     filter.subscribe(sort);
     final Offers offers = new Offers(offersSubject, reDispatchesSubject);
     sort.subscribe(offers);
-    final CaptainSimulator captainSimulator = new CaptainSimulator(captainResponseSubject);
+    final CaptainSimulator captainSimulator =
+        new CaptainSimulator(captainResponseSubject, ALWAYS_ACCEPT_OFFERS);
     offers.subscribeOffers(captainSimulator);
     offers.subscribeReDispatches(reDispatcher);
     final Assignments assignments = new Assignments(assignmentsSubject, reDispatchesSubject);
     captainSimulator.subscribe(assignments);
-    assignments.subscribe(assignment ->
-        System.out.printf("Assigned captain %s to booking %s%n",
-            assignment.captainId, assignment.booking.id));
+    assignments.subscribeReDispatches(reDispatcher);
+    final TestSubscriber<Assignment> assignmentsTestSubscriber = TestSubscriber.create();
+    assignments.subscribeAssignments(assignmentsTestSubscriber::onNext);
+    final TestSubscriber<DispatchRetryExceeded> dispatchRetryExceededTestSubscriber =
+        TestSubscriber.create();
+    reDispatcher.subscribe(dispatchRetryExceededTestSubscriber::onNext);
     bookings.forEach(bookingsSubject::onNext);
+    assignmentsTestSubscriber.assertValueCount(10);
+    dispatchRetryExceededTestSubscriber.assertValueCount(0);
   }
 
   private Booking randomBooking() {
@@ -87,9 +103,9 @@ class IntegrationTest {
     return random.nextDouble() * 180 - 90;
   }
 
-  private Set<Captain> randomCaptains() {
+  private Set<Captain> randomCaptains(final Supplier<Integer> captainsCountSupplier) {
     return Stream.generate(this::randomCaptain)
-        .limit(random.nextInt(8) + 1)
+        .limit(captainsCountSupplier.get())
         .collect(toSet());
   }
 
