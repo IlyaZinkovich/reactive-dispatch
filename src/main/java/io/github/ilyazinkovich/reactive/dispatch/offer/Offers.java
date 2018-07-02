@@ -16,12 +16,8 @@ public class Offers implements Consumer<SortedCaptains> {
     this.reDispatchesSubject = reDispatchesSubject;
   }
 
-  public void subscribeOffers(final Consumer<Offer> offerConsumer) {
-    offersSubject.subscribe(offerConsumer);
-  }
-
-  public void subscribeReDispatches(final Consumer<ReDispatch> reDispatchConsumer) {
-    reDispatchesSubject.subscribe(reDispatchConsumer);
+  public void subscribe(final Consumer<Offer> consumer) {
+    offersSubject.subscribe(consumer);
   }
 
   @Override

@@ -59,7 +59,7 @@ class IntegrationTest {
       PublishSubject.create();
 
   @Test
-  void test() {
+  void testOptimisticFlow() {
     final int bookingsCount = 10;
     final List<Booking> bookings = generateBookings(bookingsCount);
     final ConcurrentMap<Location, Set<Captain>> captainsByLocation = bookings.stream()
@@ -190,7 +190,7 @@ class IntegrationTest {
     supply.subscribe(filter);
     filter.subscribe(sort);
     sort.subscribe(offers);
-    offers.subscribeOffers(captainSimulator);
+    offers.subscribe(captainSimulator);
     captainSimulator.subscribe(assignments);
     reDispatchesSubject.subscribe(reDispatcher);
   }
