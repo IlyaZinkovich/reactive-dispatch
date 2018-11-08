@@ -13,7 +13,7 @@ import io.github.ilyazinkovich.reactive.dispatch.core.Location;
 import io.github.ilyazinkovich.reactive.dispatch.filter.Filter;
 import io.github.ilyazinkovich.reactive.dispatch.offer.Offer;
 import io.github.ilyazinkovich.reactive.dispatch.offer.Offers;
-import io.github.ilyazinkovich.reactive.dispatch.redispatch.FailedDispatchBookingsConsumer;
+import io.github.ilyazinkovich.reactive.dispatch.redispatch.FailedDispatchBookings;
 import io.github.ilyazinkovich.reactive.dispatch.redispatch.ReDispatcher;
 import io.github.ilyazinkovich.reactive.dispatch.sort.Sort;
 import io.github.ilyazinkovich.reactive.dispatch.supply.Supply;
@@ -135,7 +135,7 @@ class DispatchIntegrationTest {
         System.out::println);
   }
 
-  private ReDispatcher noRedispatch(final FailedDispatchBookingsConsumer consumer) {
+  private ReDispatcher noRedispatch(final FailedDispatchBookings consumer) {
     final Map<BookingId, AtomicInteger> retriesCount = new ConcurrentHashMap<>();
     return new ReDispatcher(NO_RETRIES, NO_RETRY_DELAY, RETRY_SCHEDULER, retriesCount, consumer);
   }

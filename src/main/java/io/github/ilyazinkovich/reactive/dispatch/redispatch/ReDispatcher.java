@@ -14,22 +14,22 @@ public class ReDispatcher {
   private final Duration retryDelay;
   private final Scheduler retryScheduler;
   private final int maxRetriesCount;
-  private final FailedDispatchBookingsConsumer failedDispatchBookingsConsumer;
+  private final FailedDispatchBookings failedDispatchBookings;
 
   public ReDispatcher(final int maxRetriesCount, final Duration retryDelay,
       final Scheduler retryScheduler, final Map<BookingId, AtomicInteger> retriesCount,
-      final FailedDispatchBookingsConsumer failedDispatchBookingsConsumer) {
+      final FailedDispatchBookings failedDispatchBookings) {
     this.maxRetriesCount = maxRetriesCount;
     this.retriesCount = retriesCount;
     this.retryDelay = retryDelay;
     this.retryScheduler = retryScheduler;
-    this.failedDispatchBookingsConsumer = failedDispatchBookingsConsumer;
+    this.failedDispatchBookings = failedDispatchBookings;
   }
 
   public Mono<Booking> accept(final Booking booking) {
     retriesCount.putIfAbsent(booking.id, new AtomicInteger());
     if (retriesCount.get(booking.id).incrementAndGet() > maxRetriesCount) {
-      failedDispatchBookingsConsumer.accept(booking);
+      failedDispatchBookings.add(booking);
       return Mono.empty();
     } else {
       return Mono.just(booking).delayElement(retryDelay, retryScheduler);
