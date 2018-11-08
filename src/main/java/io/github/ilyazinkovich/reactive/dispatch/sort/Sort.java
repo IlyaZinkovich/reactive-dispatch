@@ -5,21 +5,15 @@ import static java.util.stream.Collectors.toList;
 import io.github.ilyazinkovich.reactive.dispatch.core.Captain;
 import io.github.ilyazinkovich.reactive.dispatch.filter.FilteredCaptains;
 import java.util.List;
-import java.util.function.Consumer;
+import reactor.core.publisher.Mono;
 
 public class Sort {
 
-  private final Consumer<SortedCaptains> sortedCaptainsSubject;
-
-  public Sort(final Consumer<SortedCaptains> sortedCaptainsSubject) {
-    this.sortedCaptainsSubject = sortedCaptainsSubject;
-  }
-
-  public void accept(final FilteredCaptains filteredCaptains) {
+  public Mono<SortedCaptains> accept(final FilteredCaptains filteredCaptains) {
     final List<Captain> captains = filteredCaptains.captains.stream()
         .sorted(Captain.comparator()).collect(toList());
     final SortedCaptains sortedCaptains =
         new SortedCaptains(filteredCaptains.booking, captains);
-    sortedCaptainsSubject.accept(sortedCaptains);
+    return Mono.just(sortedCaptains);
   }
 }

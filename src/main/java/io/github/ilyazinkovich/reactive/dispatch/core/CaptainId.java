@@ -5,7 +5,7 @@ import java.util.UUID;
 
 public class CaptainId {
 
-  final String uid;
+  public final String uid;
 
   public CaptainId(final String uid) {
     this.uid = uid;

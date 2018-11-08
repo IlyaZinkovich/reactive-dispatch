@@ -1,7 +1,6 @@
 package io.github.ilyazinkovich.reactive.dispatch.supply;
 
 import io.github.ilyazinkovich.reactive.dispatch.core.Booking;
-import io.github.ilyazinkovich.reactive.dispatch.core.BookingId;
 import io.github.ilyazinkovich.reactive.dispatch.core.Captain;
 import java.util.Set;
 
