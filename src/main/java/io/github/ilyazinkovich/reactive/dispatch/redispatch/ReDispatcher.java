@@ -26,7 +26,7 @@ public class ReDispatcher {
     this.failedDispatchBookings = failedDispatchBookings;
   }
 
-  public Mono<Booking> accept(final Booking booking) {
+  public Mono<Booking> scheduleReDispatch(final Booking booking) {
     retriesCount.putIfAbsent(booking.id, new AtomicInteger());
     if (retriesCount.get(booking.id).incrementAndGet() > maxRetriesCount) {
       failedDispatchBookings.add(booking);

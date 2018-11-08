@@ -18,10 +18,7 @@ public class Dispatch {
   private final Offers offers;
   private final ReDispatcher reDispatcher;
 
-  public Dispatch(final Supply supply,
-      final Filter filter,
-      final Sort sort,
-      final Offers offers,
+  public Dispatch(final Supply supply, final Filter filter, final Sort sort, final Offers offers,
       final ReDispatcher reDispatcher) {
     this.supply = supply;
     this.filter = filter;
@@ -37,6 +34,6 @@ public class Dispatch {
         .flatMap(sort::accept)
         .flatMap(offers::accept)
         .onErrorResume(RedispatchRequired.class,
-            error -> reDispatcher.accept(error.booking).flatMap(this::dispatch));
+            error -> reDispatcher.scheduleReDispatch(error.booking).flatMap(this::dispatch));
   }
 }
