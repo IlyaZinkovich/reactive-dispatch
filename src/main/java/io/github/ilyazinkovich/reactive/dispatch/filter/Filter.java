@@ -3,7 +3,7 @@ package io.github.ilyazinkovich.reactive.dispatch.filter;
 import static java.util.stream.Collectors.toSet;
 
 import io.github.ilyazinkovich.reactive.dispatch.core.Captain;
-import io.github.ilyazinkovich.reactive.dispatch.core.RedispatchRequiredException;
+import io.github.ilyazinkovich.reactive.dispatch.core.RedispatchRequired;
 import io.github.ilyazinkovich.reactive.dispatch.supply.SuppliedCaptains;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -22,7 +22,7 @@ public class Filter {
         .filter(captainFilter)
         .collect(toSet());
     if (captains.isEmpty()) {
-      throw new RedispatchRequiredException(suppliedCaptains.booking);
+      return Mono.error(new RedispatchRequired(suppliedCaptains.booking));
     } else {
       final FilteredCaptains filteredCaptains =
           new FilteredCaptains(suppliedCaptains.booking, captains);

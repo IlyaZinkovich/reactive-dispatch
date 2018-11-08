@@ -5,7 +5,7 @@ import static java.util.Collections.emptySet;
 import io.github.ilyazinkovich.reactive.dispatch.core.Booking;
 import io.github.ilyazinkovich.reactive.dispatch.core.Captain;
 import io.github.ilyazinkovich.reactive.dispatch.core.Location;
-import io.github.ilyazinkovich.reactive.dispatch.core.RedispatchRequiredException;
+import io.github.ilyazinkovich.reactive.dispatch.core.RedispatchRequired;
 import java.util.Map;
 import java.util.Set;
 import reactor.core.publisher.Mono;
@@ -22,7 +22,7 @@ public class Supply {
     final Set<Captain> captains =
         captainsByLocation.getOrDefault(booking.pickupLocation, emptySet());
     if (captains.isEmpty()) {
-      throw new RedispatchRequiredException(booking);
+      return Mono.error(new RedispatchRequired(booking));
     } else {
       return Mono.just(new SuppliedCaptains(booking, captains));
     }

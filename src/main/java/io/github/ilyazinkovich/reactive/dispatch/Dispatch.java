@@ -1,7 +1,7 @@
 package io.github.ilyazinkovich.reactive.dispatch;
 
 import io.github.ilyazinkovich.reactive.dispatch.core.Booking;
-import io.github.ilyazinkovich.reactive.dispatch.core.RedispatchRequiredException;
+import io.github.ilyazinkovich.reactive.dispatch.core.RedispatchRequired;
 import io.github.ilyazinkovich.reactive.dispatch.filter.Filter;
 import io.github.ilyazinkovich.reactive.dispatch.offer.Offer;
 import io.github.ilyazinkovich.reactive.dispatch.offer.Offers;
@@ -36,7 +36,7 @@ public class Dispatch {
         .flatMap(filter::accept)
         .flatMap(sort::accept)
         .flatMap(offers::accept)
-        .onErrorResume(RedispatchRequiredException.class,
+        .onErrorResume(RedispatchRequired.class,
             error -> reDispatcher.accept(error.booking).flatMap(this::dispatch));
   }
 }
