@@ -2,33 +2,33 @@ package io.github.ilyazinkovich.reactive.dispatch.redispatch;
 
 import io.github.ilyazinkovich.reactive.dispatch.core.Booking;
 import io.github.ilyazinkovich.reactive.dispatch.core.BookingId;
-import io.github.ilyazinkovich.reactive.dispatch.core.ReDispatch;
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
 
 public class ReDispatcher {
 
-  private final Consumer<Booking> bookingsSubject;
   private final Map<BookingId, AtomicInteger> retriesCount;
-  private final Consumer<RetriesExceeded> dispatchRetryExceededSubject;
+  private final Duration retryDelay;
+  private final Scheduler retryScheduler;
+  private final int maxRetriesCount;
 
-  public ReDispatcher(final Consumer<Booking> bookingsSubject,
-      final Map<BookingId, AtomicInteger> retriesCount,
-      final Consumer<RetriesExceeded> dispatchRetryExceededSubject) {
-    this.bookingsSubject = bookingsSubject;
+  public ReDispatcher(final int maxRetriesCount, final Duration retryDelay,
+      final Scheduler retryScheduler, final Map<BookingId, AtomicInteger> retriesCount) {
+    this.maxRetriesCount = maxRetriesCount;
     this.retriesCount = retriesCount;
-    this.dispatchRetryExceededSubject = dispatchRetryExceededSubject;
+    this.retryDelay = retryDelay;
+    this.retryScheduler = retryScheduler;
   }
 
-  public void accept(final ReDispatch reDispatch) {
-    final BookingId bookingId = reDispatch.booking.id;
-    retriesCount.putIfAbsent(bookingId, new AtomicInteger());
-    if (retriesCount.get(bookingId).incrementAndGet() < 3) {
-      bookingsSubject.accept(reDispatch.booking);
+  public Mono<Booking> accept(final Booking booking) {
+    retriesCount.putIfAbsent(booking.id, new AtomicInteger());
+    if (retriesCount.get(booking.id).incrementAndGet() > maxRetriesCount) {
+      return Mono.empty();
     } else {
-      System.out.printf("Retries count exceeded for booking %s%n", bookingId.uid);
-      dispatchRetryExceededSubject.accept(new RetriesExceeded(reDispatch.booking));
+      return Mono.just(booking).delayElement(retryDelay, retryScheduler);
     }
   }
 }
