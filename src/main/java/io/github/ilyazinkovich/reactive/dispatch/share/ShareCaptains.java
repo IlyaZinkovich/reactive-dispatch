@@ -19,9 +19,7 @@ public class ShareCaptains {
   }
 
   private Set<Captain> union(final Set<Captain> left, final Set<Captain> right) {
-    final Set<Captain> union = new HashSet<>(left.size() + right.size());
-    union.addAll(left);
-    union.addAll(right);
-    return union;
+    left.addAll(right);
+    return left;
   }
 }
