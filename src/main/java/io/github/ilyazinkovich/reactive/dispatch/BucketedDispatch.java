@@ -2,6 +2,7 @@ package io.github.ilyazinkovich.reactive.dispatch;
 
 import io.github.ilyazinkovich.reactive.dispatch.buffer.Buffer;
 import io.github.ilyazinkovich.reactive.dispatch.core.Booking;
+import io.github.ilyazinkovich.reactive.dispatch.core.RedispatchRequired;
 import io.github.ilyazinkovich.reactive.dispatch.cost.CostFunction;
 import io.github.ilyazinkovich.reactive.dispatch.filter.Filter;
 import io.github.ilyazinkovich.reactive.dispatch.offer.Offer;
@@ -9,6 +10,7 @@ import io.github.ilyazinkovich.reactive.dispatch.offer.Offers;
 import io.github.ilyazinkovich.reactive.dispatch.redispatch.Redispatch;
 import io.github.ilyazinkovich.reactive.dispatch.share.ShareCaptains;
 import io.github.ilyazinkovich.reactive.dispatch.supply.Supply;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
 public class BucketedDispatch {
@@ -37,12 +39,14 @@ public class BucketedDispatch {
     this.redispatch = redispatch;
   }
 
-  public Flux<Offer> dispatch(final Flux<Booking> bookings) {
-    return buffer.formBucket(bookings)
+  public Flux<Offer> dispatch(final Publisher<Booking> bookings) {
+    return buffer.formBucket(Flux.from(bookings))
         .flatMap(bucket -> Flux.fromIterable(bucket).flatMap(supply::accept).collectList())
         .map(shareCaptains::share)
         .flatMap(bucket -> Flux.fromIterable(bucket).flatMap(filter::accept).collectList())
         .flatMap(costFunction::optimiseCost)
-        .flatMap(offers::accept);
+        .flatMap(offers::accept)
+        .onErrorResume(RedispatchRequired.class,
+            error -> dispatch(redispatch.scheduleReDispatch(error.booking)));
   }
 }

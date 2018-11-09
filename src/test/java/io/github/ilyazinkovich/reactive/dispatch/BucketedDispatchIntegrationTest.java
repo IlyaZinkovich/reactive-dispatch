@@ -18,11 +18,12 @@ import io.github.ilyazinkovich.reactive.dispatch.offer.Offers;
 import io.github.ilyazinkovich.reactive.dispatch.redispatch.FailedDispatchBookings;
 import io.github.ilyazinkovich.reactive.dispatch.redispatch.Redispatch;
 import io.github.ilyazinkovich.reactive.dispatch.share.ShareCaptains;
-import io.github.ilyazinkovich.reactive.dispatch.sort.Sort;
 import io.github.ilyazinkovich.reactive.dispatch.supply.Supply;
 import java.time.Duration;
+import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -72,7 +73,6 @@ public class BucketedDispatchIntegrationTest {
         generateCaptainsPerBooking(bookings, AT_LEAST_ONE);
     final Supply supply = new Supply(captainsByLocation);
     final Filter filter = new Filter(NO_CAPTAINS_FILTER);
-    final Sort sort = new Sort();
     final Offers offers = new Offers();
     final Redispatch redispatch = noRedispatch();
     final Buffer buffer = new Buffer(BUFFER_SCHEDULER);
@@ -82,6 +82,70 @@ public class BucketedDispatchIntegrationTest {
         shareCaptains, filter, costFunction, offers, redispatch);
     final Flux<Offer> offerStream = bucketedDispatch.dispatch(Flux.fromIterable(bookings));
     assertEquals(Long.valueOf(bookingsCount), offerStream.count().block());
+  }
+
+  @Test
+  void testEmptySupply() {
+    final int bookingsCount = 10;
+    final List<Booking> bookings = generateBookings(bookingsCount);
+    final ConcurrentMap<Location, Set<Captain>> captainsByLocation =
+        generateCaptainsPerBooking(bookings, ZERO);
+    final Supply supply = new Supply(captainsByLocation);
+    final Filter filter = new Filter(NO_CAPTAINS_FILTER);
+    final Offers offers = new Offers();
+    final Queue<Booking> reDispatchedBookings = new ArrayDeque<>();
+    final Redispatch redispatch = noRedispatch(reDispatchedBookings::offer);
+    final Buffer buffer = new Buffer(BUFFER_SCHEDULER);
+    final ShareCaptains shareCaptains = new ShareCaptains();
+    final CostFunction costFunction = new CostFunction();
+    final BucketedDispatch bucketedDispatch = new BucketedDispatch(buffer, supply,
+        shareCaptains, filter, costFunction, offers, redispatch);
+    final Flux<Offer> offerStream = bucketedDispatch.dispatch(Flux.fromIterable(bookings));
+    assertEquals(Long.valueOf(0), offerStream.count().block());
+    assertEquals(bookingsCount, reDispatchedBookings.size());
+  }
+
+  @Test
+  void testReDispatchForEmptyCaptainsAfterFilter() {
+    final int bookingsCount = 10;
+    final List<Booking> bookings = generateBookings(bookingsCount);
+    final ConcurrentMap<Location, Set<Captain>> captainsByLocation =
+        generateCaptainsPerBooking(bookings, AT_LEAST_ONE);
+    final Supply supply = new Supply(captainsByLocation);
+    final Filter filter = new Filter(ALL_CAPTAINS_FILTER);
+    final Offers offers = new Offers();
+    final Queue<Booking> reDispatchedBookings = new ArrayDeque<>();
+    final Redispatch redispatch = noRedispatch(reDispatchedBookings::offer);
+    final Buffer buffer = new Buffer(BUFFER_SCHEDULER);
+    final ShareCaptains shareCaptains = new ShareCaptains();
+    final CostFunction costFunction = new CostFunction();
+    final BucketedDispatch bucketedDispatch = new BucketedDispatch(buffer, supply,
+        shareCaptains, filter, costFunction, offers, redispatch);
+    final Flux<Offer> offerStream = bucketedDispatch.dispatch(Flux.fromIterable(bookings));
+    assertEquals(Long.valueOf(0), offerStream.count().block());
+    assertEquals(bookingsCount, reDispatchedBookings.size());
+  }
+
+  @Test
+  void testRealisticFlow() {
+    final int bookingsCount = 10;
+    final List<Booking> bookings = generateBookings(bookingsCount);
+    final ConcurrentMap<Location, Set<Captain>> captainsByLocation =
+        generateCaptainsPerBooking(bookings, AT_MOST_EIGHT);
+    final Supply supply = new Supply(captainsByLocation);
+    final Filter filter = new Filter(RANDOM_CAPTAIN_FILTER);
+    final Offers offers = new Offers();
+    final Queue<Booking> reDispatchedBookings = new ArrayDeque<>();
+    final Map<BookingId, AtomicInteger> retriesCount = new ConcurrentHashMap<>();
+    final Redispatch redispatch = new Redispatch(SINGLE_RETRY, SMALL_RETRY_DELAY,
+        RETRY_SCHEDULER, retriesCount, reDispatchedBookings::offer);
+    final Buffer buffer = new Buffer(BUFFER_SCHEDULER);
+    final ShareCaptains shareCaptains = new ShareCaptains();
+    final CostFunction costFunction = new CostFunction();
+    final BucketedDispatch bucketedDispatch = new BucketedDispatch(buffer, supply,
+        shareCaptains, filter, costFunction, offers, redispatch);
+    final Flux<Offer> offerStream = bucketedDispatch.dispatch(Flux.fromIterable(bookings));
+    assertEquals(bookingsCount, offerStream.count().block() + reDispatchedBookings.size());
   }
 
   private ConcurrentMap<Location, Set<Captain>> generateCaptainsPerBooking(
