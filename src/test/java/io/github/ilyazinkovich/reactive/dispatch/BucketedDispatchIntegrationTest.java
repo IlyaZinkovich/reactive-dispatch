@@ -57,9 +57,9 @@ public class BucketedDispatchIntegrationTest {
     final int bookingsCount = 100;
     final List<Booking> bookings = generateBookings(bookingsCount);
     final Buffer buffer = new Buffer(BUFFER_SCHEDULER);
-    final Flux<Flux<Booking>> buckets = buffer.formBucket(Flux.fromIterable(bookings));
+    final Flux<List<Booking>> buckets = buffer.formBucket(Flux.fromIterable(bookings));
     final List<Booking> bucketedBookings =
-        buckets.toStream().flatMap(Flux::toStream).collect(toList());
+        buckets.toStream().flatMap(List::stream).collect(toList());
     assertEquals(bookingsCount, bucketedBookings.size());
     assertEquals(bookings, bucketedBookings);
   }
