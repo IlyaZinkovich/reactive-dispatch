@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 
-public class ReDispatcher {
+public class Redispatch {
 
   private final Map<BookingId, AtomicInteger> retriesCount;
   private final Duration retryDelay;
@@ -16,7 +16,7 @@ public class ReDispatcher {
   private final int maxRetriesCount;
   private final FailedDispatchBookings failedDispatchBookings;
 
-  public ReDispatcher(final int maxRetriesCount, final Duration retryDelay,
+  public Redispatch(final int maxRetriesCount, final Duration retryDelay,
       final Scheduler retryScheduler, final Map<BookingId, AtomicInteger> retriesCount,
       final FailedDispatchBookings failedDispatchBookings) {
     this.maxRetriesCount = maxRetriesCount;

@@ -9,7 +9,7 @@ public class SuppliedCaptains {
   public final Booking booking;
   public final Set<Captain> captains;
 
-  SuppliedCaptains(final Booking booking, final Set<Captain> captains) {
+  public SuppliedCaptains(final Booking booking, final Set<Captain> captains) {
     this.booking = booking;
     this.captains = captains;
   }

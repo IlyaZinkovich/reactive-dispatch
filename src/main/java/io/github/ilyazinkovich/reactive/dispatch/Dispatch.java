@@ -5,7 +5,7 @@ import io.github.ilyazinkovich.reactive.dispatch.core.RedispatchRequired;
 import io.github.ilyazinkovich.reactive.dispatch.filter.Filter;
 import io.github.ilyazinkovich.reactive.dispatch.offer.Offer;
 import io.github.ilyazinkovich.reactive.dispatch.offer.Offers;
-import io.github.ilyazinkovich.reactive.dispatch.redispatch.ReDispatcher;
+import io.github.ilyazinkovich.reactive.dispatch.redispatch.Redispatch;
 import io.github.ilyazinkovich.reactive.dispatch.sort.Sort;
 import io.github.ilyazinkovich.reactive.dispatch.supply.Supply;
 import reactor.core.publisher.Mono;
@@ -16,15 +16,15 @@ public class Dispatch {
   private final Filter filter;
   private final Sort sort;
   private final Offers offers;
-  private final ReDispatcher reDispatcher;
+  private final Redispatch redispatch;
 
   public Dispatch(final Supply supply, final Filter filter, final Sort sort, final Offers offers,
-      final ReDispatcher reDispatcher) {
+      final Redispatch redispatch) {
     this.supply = supply;
     this.filter = filter;
     this.sort = sort;
     this.offers = offers;
-    this.reDispatcher = reDispatcher;
+    this.redispatch = redispatch;
   }
 
   public Mono<Offer> dispatch(final Booking booking) {
@@ -34,6 +34,6 @@ public class Dispatch {
         .flatMap(sort::accept)
         .flatMap(offers::accept)
         .onErrorResume(RedispatchRequired.class,
-            error -> reDispatcher.scheduleReDispatch(error.booking).flatMap(this::dispatch));
+            error -> redispatch.scheduleReDispatch(error.booking).flatMap(this::dispatch));
   }
 }

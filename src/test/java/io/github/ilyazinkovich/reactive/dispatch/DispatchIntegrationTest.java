@@ -14,7 +14,7 @@ import io.github.ilyazinkovich.reactive.dispatch.filter.Filter;
 import io.github.ilyazinkovich.reactive.dispatch.offer.Offer;
 import io.github.ilyazinkovich.reactive.dispatch.offer.Offers;
 import io.github.ilyazinkovich.reactive.dispatch.redispatch.FailedDispatchBookings;
-import io.github.ilyazinkovich.reactive.dispatch.redispatch.ReDispatcher;
+import io.github.ilyazinkovich.reactive.dispatch.redispatch.Redispatch;
 import io.github.ilyazinkovich.reactive.dispatch.sort.Sort;
 import io.github.ilyazinkovich.reactive.dispatch.supply.Supply;
 import java.time.Duration;
@@ -60,8 +60,8 @@ class DispatchIntegrationTest {
     final Filter filter = new Filter(NO_CAPTAINS_FILTER);
     final Sort sort = new Sort();
     final Offers offers = new Offers();
-    final ReDispatcher reDispatcher = noRedispatch();
-    final Dispatch dispatch = new Dispatch(supply, filter, sort, offers, reDispatcher);
+    final Redispatch redispatch = noRedispatch();
+    final Dispatch dispatch = new Dispatch(supply, filter, sort, offers, redispatch);
     final Flux<Offer> offerStream = Flux.fromIterable(bookings).flatMap(dispatch::dispatch);
     offerStream.toStream().forEach(offer ->
         System.out.println(offer.booking.id.uid + " " + offer.captainId.uid));
@@ -79,8 +79,8 @@ class DispatchIntegrationTest {
     final Sort sort = new Sort();
     final Offers offers = new Offers();
     final Queue<Booking> reDispatchedBookings = new ArrayDeque<>();
-    final ReDispatcher reDispatcher = noRedispatch(reDispatchedBookings::offer);
-    final Dispatch dispatch = new Dispatch(supply, filter, sort, offers, reDispatcher);
+    final Redispatch redispatch = noRedispatch(reDispatchedBookings::offer);
+    final Dispatch dispatch = new Dispatch(supply, filter, sort, offers, redispatch);
     final Flux<Offer> offerStream = Flux.fromIterable(bookings).flatMap(dispatch::dispatch);
     assertEquals(Long.valueOf(0), offerStream.count().block());
     assertEquals(bookingsCount, reDispatchedBookings.size());
@@ -97,8 +97,8 @@ class DispatchIntegrationTest {
     final Sort sort = new Sort();
     final Offers offers = new Offers();
     final Queue<Booking> reDispatchedBookings = new ArrayDeque<>();
-    final ReDispatcher reDispatcher = noRedispatch(reDispatchedBookings::offer);
-    final Dispatch dispatch = new Dispatch(supply, filter, sort, offers, reDispatcher);
+    final Redispatch redispatch = noRedispatch(reDispatchedBookings::offer);
+    final Dispatch dispatch = new Dispatch(supply, filter, sort, offers, redispatch);
     final Flux<Offer> offerStream = Flux.fromIterable(bookings).flatMap(dispatch::dispatch);
     assertEquals(Long.valueOf(0), offerStream.count().block());
     assertEquals(bookingsCount, reDispatchedBookings.size());
@@ -116,9 +116,9 @@ class DispatchIntegrationTest {
     final Offers offers = new Offers();
     final Queue<Booking> reDispatchedBookings = new ArrayDeque<>();
     final Map<BookingId, AtomicInteger> retriesCount = new ConcurrentHashMap<>();
-    final ReDispatcher reDispatcher = new ReDispatcher(SINGLE_RETRY, SMALL_RETRY_DELAY,
+    final Redispatch redispatch = new Redispatch(SINGLE_RETRY, SMALL_RETRY_DELAY,
         RETRY_SCHEDULER, retriesCount, reDispatchedBookings::offer);
-    final Dispatch dispatch = new Dispatch(supply, filter, sort, offers, reDispatcher);
+    final Dispatch dispatch = new Dispatch(supply, filter, sort, offers, redispatch);
     final Flux<Offer> offerStream = Flux.fromIterable(bookings).flatMap(dispatch::dispatch);
     assertEquals(bookingsCount, offerStream.count().block() + reDispatchedBookings.size());
   }
@@ -129,15 +129,15 @@ class DispatchIntegrationTest {
         booking -> randomCaptains(captainsCountSupplier)));
   }
 
-  private ReDispatcher noRedispatch() {
+  private Redispatch noRedispatch() {
     final Map<BookingId, AtomicInteger> retriesCount = new ConcurrentHashMap<>();
-    return new ReDispatcher(NO_RETRIES, NO_RETRY_DELAY, RETRY_SCHEDULER, retriesCount,
+    return new Redispatch(NO_RETRIES, NO_RETRY_DELAY, RETRY_SCHEDULER, retriesCount,
         System.out::println);
   }
 
-  private ReDispatcher noRedispatch(final FailedDispatchBookings consumer) {
+  private Redispatch noRedispatch(final FailedDispatchBookings consumer) {
     final Map<BookingId, AtomicInteger> retriesCount = new ConcurrentHashMap<>();
-    return new ReDispatcher(NO_RETRIES, NO_RETRY_DELAY, RETRY_SCHEDULER, retriesCount, consumer);
+    return new Redispatch(NO_RETRIES, NO_RETRY_DELAY, RETRY_SCHEDULER, retriesCount, consumer);
   }
 
   private List<Booking> generateBookings(final int bookingsCount) {
