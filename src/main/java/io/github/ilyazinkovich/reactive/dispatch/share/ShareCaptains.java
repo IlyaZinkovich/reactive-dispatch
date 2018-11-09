@@ -1,25 +1,20 @@
 package io.github.ilyazinkovich.reactive.dispatch.share;
 
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+
 import io.github.ilyazinkovich.reactive.dispatch.core.Captain;
 import io.github.ilyazinkovich.reactive.dispatch.supply.SuppliedCaptains;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 public class ShareCaptains {
 
-  public Flux<SuppliedCaptains> share(final Flux<SuppliedCaptains> suppliedCaptains) {
-    final Mono<Set<Captain>> allCaptains = suppliedCaptains.reduce(
-        new HashSet<>(),
-        (captains, captainsPerBooking) -> union(captains, captainsPerBooking.captains)
-    );
-    return suppliedCaptains.flatMap(captainsPerBooking ->
-        allCaptains.map(captains -> new SuppliedCaptains(captainsPerBooking.booking, captains)));
-  }
-
-  private Set<Captain> union(final Set<Captain> left, final Set<Captain> right) {
-    left.addAll(right);
-    return left;
+  public List<SuppliedCaptains> share(final List<SuppliedCaptains> suppliedCaptains) {
+    final Set<Captain> allCaptains = suppliedCaptains.stream()
+        .flatMap(captainsPerBooking -> captainsPerBooking.captains.stream()).collect(toSet());
+    return suppliedCaptains.stream()
+        .map(captainsPerBooking -> new SuppliedCaptains(captainsPerBooking.booking, allCaptains))
+        .collect(toList());
   }
 }

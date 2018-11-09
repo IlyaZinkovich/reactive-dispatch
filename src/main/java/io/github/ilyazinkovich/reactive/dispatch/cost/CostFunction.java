@@ -11,8 +11,8 @@ import reactor.core.publisher.Flux;
 public class CostFunction {
 
   public Flux<SortedCaptains> optimiseCost(
-      final Flux<FilteredCaptains> availableCaptainsPerBooking) {
-    return availableCaptainsPerBooking.map(filteredCaptains -> {
+      final List<FilteredCaptains> availableCaptainsPerBooking) {
+    return Flux.fromIterable(availableCaptainsPerBooking).map(filteredCaptains -> {
       final List<Captain> captains = new ArrayList<>(filteredCaptains.captains);
       Collections.shuffle(captains);
       return new SortedCaptains(filteredCaptains.booking, captains);
